@@ -1,0 +1,3 @@
+modulos/terraform.tfvars
+modulos/.terraform/
+modulos/.terraform.lock.hcl

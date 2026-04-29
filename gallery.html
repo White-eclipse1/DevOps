@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Galería — Lulú Cárdenas</title>
+  <meta name="description" content="Galería de pinturas y cerámicas originales." />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+  <link rel="icon" type="image/png" href="assets/img/arte de lulu1.PNG">
+
+</head>
+
+<body>
+  <a class="skip" href="#grid">Saltar al contenido</a>
+
+  <header class="header">
+    <div class="container header__inner">
+      <a class="brand" href="index.html" aria-label="Inicio">
+        <span class="brand__mark" aria-hidden="true">
+          <img src="assets/img/WhatsApp Image 2026-02-16 at 5.12.09 PM.jpeg" alt="" />
+        </span>
+        <span class="brand__text">
+          <span class="brand__name">Lulú Cárdenas</span>
+          <span class="brand__sub">Pintura + Cerámica</span>
+        </span>
+      </a>
+
+      <nav id="navMenu" class="nav" aria-label="Navegación principal">
+        <button class="nav__close" type="button" aria-label="Cerrar menú">✕</button>
+        <p class="nav__eyebrow">Explora el estudio</p>
+        <div class="nav__primary">
+          <details class="nav__dropdown">
+            <summary class="nav__link">Galería</summary>
+            <div class="nav__dropdown-menu">
+              <a href="gallery.html">Ver todo</a>
+              <a href="gallery.html?type=pintura">Pinturas</a>
+              <a href="gallery.html?type=ceramica">Cerámicas</a>
+            </div>
+          </details>
+          <a href="index.html#about">Acerca</a>
+          <a href="index.html#contacto">Contacto</a>
+        </div>
+        <div class="nav__actions">
+          <a class="ig-pill ig-pill--solid" href="https://www.instagram.com/artedelulu" target="_blank" rel="noreferrer">Instagram</a>
+          <a class="ig-pill ig-pill--ghost" href="https://linktr.ee/lulucardenas?utm_source=linktree_profile_share&ltsid=c105b71a-f330-43ba-a84f-3cb85dae8ddf" target="_blank" rel="noreferrer">Linktree</a>
+        </div>
+      </nav>
+
+      <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="navMenu">
+        <span class="sr-only">Abrir menú</span>
+        <span class="nav__toggle-box" aria-hidden="true">
+          <span></span>
+          <span></span>
+          <span></span>
+        </span>
+      </button>
+    </div>
+  </header>
+  <div class="nav__backdrop" id="navBackdrop" hidden></div>
+
+
+  <main class="section">
+    <div class="container">
+      <!-- Gallery Hero -->
+      <div class="gallery-hero">
+        <div class="gallery-hero__content">
+          <div class="section-badge" id="galleryBadge">Explorar colección</div>
+          <h1 id="galleryTitle">Galería completa</h1>
+          <p class="lead" id="galleryDesc">
+            Descubre mi colección de obras originales. Haz clic en cualquier pieza para ver sus detalles, 
+            precio y disponibilidad.
+          </p>
+          <div class="gallery-stats">
+            <div class="gallery-stat">
+              <span class="gallery-stat__number" id="totalCount">0</span>
+              <span class="gallery-stat__label">Obras totales</span>
+            </div>
+            <div class="gallery-stat">
+              <span class="gallery-stat__number" id="availableCount">0</span>
+              <span class="gallery-stat__label">Disponibles</span>
+            </div>
+          </div>
+        </div>
+        <div class="gallery-hero__actions">
+	          <a class="btn" href="index.html#contacto">Solicitar comisión</a>
+          <a class="btn btn--ghost" href="index.html#contacto">Contactar</a>
+        </div>
+      </div>
+
+      <!-- Filters Section -->
+      <div class="filters-section">
+        <div class="filters-header">
+          <h2>Filtrar obras</h2>
+          <button class="btn btn--ghost btn--small" id="resetFilters">
+            Limpiar filtros
+          </button>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="Filtros de galería">
+          <button class="tab is-active" data-filter="all" role="tab">
+            
+            Todo
+          </button>
+          <button class="tab" data-filter="pintura" role="tab">
+            
+            Pinturas
+          </button>
+          <button class="tab" data-filter="ceramica" role="tab">
+            
+            Cerámicas
+          </button>
+          <button class="tab" data-filter="disponible" role="tab">
+            
+            Disponibles
+          </button>
+        </div>
+
+        <div class="collection-filter-bar" id="collectionFiltersWrap" hidden>
+          <div class="collection-filter-bar__head">
+            <div>
+              <p class="collection-filter-bar__eyebrow">Colecciones</p>
+              <p class="collection-filter-bar__hint">
+                Filtra series completas y combina este filtro con tipo, disponibilidad o búsqueda.
+              </p>
+            </div>
+          </div>
+          <div
+            class="collection-filters"
+            id="collectionFilters"
+            aria-label="Filtros por colección"
+          ></div>
+        </div>
+
+        <div class="toolbar">
+          <div class="search-wrapper">
+            
+            <input 
+              id="search" 
+              class="search" 
+              type="search" 
+              placeholder="Buscar por obra, colección, año o técnica..." 
+              aria-label="Buscar obras"
+            />
+          </div>
+          <select id="sort" class="select" aria-label="Ordenar">
+            <option value="newest">Más recientes</option>
+            <option value="oldest">Más antiguas</option>
+            <option value="priceAsc">Precio: menor a mayor</option>
+            <option value="priceDesc">Precio: mayor a menor</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Results Info -->
+      <div class="results-info">
+        <p id="resultsText">Cargando obras...</p>
+      </div>
+
+      <!-- Gallery Grid -->
+      <div id="grid" class="expand-list"></div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="empty-state" style="display:none;">
+        
+        <h3>No se encontraron resultados</h3>
+        <p>Intenta ajustar tus filtros o términos de búsqueda.</p>
+        <button class="btn" onclick="document.getElementById('resetFilters').click()">
+          Limpiar filtros
+        </button>
+      </div>
+
+      <!-- CTA Section -->
+      <div class="gallery-cta">
+        <div class="gallery-cta__content">
+          <h2>¿No encuentras lo que buscas?</h2>
+          <p class="lead">
+	            Acepto comisiones personalizadas. Cuéntame tu idea y trabajemos en conjunto para crear 
+	            la pieza ideal para ti.
+          </p>
+          <div class="cta">
+	            <a class="btn btn--large" href="index.html#contacto">Solicitar comisión</a>
+	            <a class="btn btn--ghost btn--large" href="index.html">Volver al inicio</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer-brand">
+        <strong>Lulú Cárdenas</strong>
+        <small>Arte original desde Zapopan, México</small>
+      </div>
+      <div class="footer__links">
+        <a href="gallery.html?type=pintura">Pinturas</a>
+        <a href="gallery.html?type=ceramica">Cerámicas</a>
+        <a href="index.html#contacto">Contacto</a>
+        <a href="https://www.instagram.com/artedelulu" target="_blank" rel="noreferrer">Instagram ↗</a>
+        <a href="https://linktr.ee/lulucardenas?utm_source=linktree_profile_share&ltsid=c105b71a-f330-43ba-a84f-3cb85dae8ddf" target="_blank" rel="noreferrer">Linktree ↗</a>
+      </div>
+    </div>
+    <div class="container" style="border-top: 1px solid var(--line); padding-top: 16px; margin-top: 16px;">
+      <small style="display: block; text-align: center; color: var(--muted);">
+        © <span id="year"></span> Lulú Cárdenas. Todos los derechos reservados.
+      </small>
+    </div>
+  </footer>
+
+  <a class="ig-float" href="https://www.instagram.com/artedelulu" target="_blank" rel="noreferrer">
+	    💬 Mensaje por Instagram
+  </a>
+
+  
+  <script src="assets/data/artworks-data.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/gallery.js"></script>
+</body>
+</html>
