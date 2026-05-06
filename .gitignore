@@ -5,6 +5,8 @@
 **/terraform.tfvars
 *.auto.tfvars
 **/backend.hcl
+node_modules/
+dist/
 
 claude.md
 CLAUDE.md

@@ -5,8 +5,6 @@ terraform {
       version = "~> 4.0"
     }
   }
-
-  backend "remote" {}
 }
 
 provider "cloudflare" {

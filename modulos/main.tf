@@ -15,6 +15,10 @@ module "pages" {
   github_owner          = var.github_owner
   github_repo           = var.github_repo
   production_branch     = var.production_branch
+  build_command         = var.build_command
+  destination_dir       = var.destination_dir
+  root_dir              = var.root_dir
+  environment_variables = var.pages_environment_variables
   d1_databases = merge(
     var.existing_d1_databases,
     var.create_d1_database ? {

@@ -48,13 +48,13 @@ variable "production_branch" {
 variable "build_command" {
   type        = string
   description = "Build command for Cloudflare Pages. Leave empty for static sites without build step."
-  default     = ""
+  default     = "npm run build"
 }
 
 variable "destination_dir" {
   type        = string
   description = "Output directory produced by the build."
-  default     = ""
+  default     = "dist"
 }
 
 variable "root_dir" {

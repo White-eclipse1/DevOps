@@ -11,6 +11,12 @@ resource "cloudflare_pages_project" "art-shop-website" {
   name              = var.project_name
   production_branch = var.production_branch
 
+  build_config {
+    build_command   = var.build_command
+    destination_dir = var.destination_dir
+    root_dir        = var.root_dir
+  }
+
   source {
     type = "github"
 
@@ -29,11 +35,13 @@ resource "cloudflare_pages_project" "art-shop-website" {
 
   deployment_configs {
     production {
-      d1_databases = var.d1_databases
+      d1_databases          = var.d1_databases
+      environment_variables = var.environment_variables
     }
 
     preview {
-      d1_databases = var.d1_databases
+      d1_databases          = var.d1_databases
+      environment_variables = var.environment_variables
     }
   }
 }
