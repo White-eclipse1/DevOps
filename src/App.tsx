@@ -26,10 +26,21 @@ type SortMode = "newest" | "oldest" | "priceAsc" | "priceDesc";
 type AppRoute = "customer" | "gallery" | "artist";
 type ArtistStatusFilter = "all" | "available" | "sold" | "missingPrice";
 type ArtistTypeFilter = "all" | "pintura" | "ceramica";
+type AuthRole = "customer" | "artist";
+
+interface UserSession {
+  token: string;
+  user: {
+    name: string;
+    email: string;
+    role: AuthRole;
+  };
+}
 
 function App() {
   const path = window.location.pathname.toLowerCase();
   const route = getAppRoute(path);
+  const [session, setSession] = useState<UserSession | null>(() => readStoredSession());
 
   useEffect(() => {
     let icon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
@@ -42,12 +53,52 @@ function App() {
     icon.href = faviconImage;
   }, []);
 
+  useEffect(() => {
+    if (!session) {
+      window.localStorage.removeItem("galeria-viva-session");
+      return;
+    }
+
+    window.localStorage.setItem("galeria-viva-session", JSON.stringify(session));
+  }, [session]);
+
+  useEffect(() => {
+    if (!session) return;
+
+    if (session.user.role === "customer" && route === "artist") {
+      window.history.replaceState({}, "", "/customer");
+    }
+
+    if (session.user.role === "artist" && route === "customer") {
+      window.history.replaceState({}, "", "/artist");
+    }
+  }, [route, session]);
+
+  if (!session) {
+    return <LoginPage onLogin={setSession} />;
+  }
+
+  const effectiveRoute =
+    session.user.role === "artist"
+      ? route === "gallery"
+        ? "gallery"
+        : "artist"
+      : route === "gallery"
+        ? "gallery"
+        : "customer";
+
   return (
     <>
-      <Header activeRoute={route} />
-      {route === "artist" ? <ArtistPage /> : route === "gallery" ? <GalleryPage /> : <HomePage />}
+      <Header activeRoute={effectiveRoute} session={session} onLogout={() => setSession(null)} />
+      {effectiveRoute === "artist" ? (
+        <ArtistPage />
+      ) : effectiveRoute === "gallery" ? (
+        <GalleryPage />
+      ) : (
+        <HomePage />
+      )}
       <Footer />
-      {route !== "artist" && (
+      {effectiveRoute !== "artist" && (
         <a className="ig-float" href={SETTINGS.instagramUrl} target="_blank" rel="noreferrer">
           Mensaje por Instagram
         </a>
@@ -56,7 +107,137 @@ function App() {
   );
 }
 
-function Header({ activeRoute }: { activeRoute: AppRoute }) {
+function LoginPage({ onLogin }: { onLogin: (session: UserSession) => void }) {
+  const [role, setRole] = useState<AuthRole>("customer");
+  const [email, setEmail] = useState("cliente@galeriaviva.local");
+  const [password, setPassword] = useState("cliente123");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useDocumentMeta("Login - Galeria Viva", "Acceso para cliente o artista en Galeria Viva.");
+
+  function chooseRole(nextRole: AuthRole) {
+    setRole(nextRole);
+    setError("");
+
+    if (nextRole === "artist") {
+      setEmail("artista@galeriaviva.local");
+      setPassword("artista123");
+      return;
+    }
+
+    setEmail("cliente@galeriaviva.local");
+    setPassword("cliente123");
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const nextSession = await login(role, email, password);
+      onLogin(nextSession);
+      window.history.replaceState(
+        {},
+        "",
+        nextSession.user.role === "artist" ? "/artist" : "/customer",
+      );
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : "No se pudo iniciar sesion.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <main className="login-shell">
+      <section className="login-panel" aria-labelledby="login-title">
+        <div className="login-panel__brand">
+          <span className="brand__mark" aria-hidden="true">
+            <img src={imageForFile("WhatsApp Image 2026-02-16 at 5.12.09 PM.jpeg")} alt="" />
+          </span>
+          <div>
+            <div className="section-badge">Galeria Viva</div>
+            <h1 id="login-title">Entrar a la galeria</h1>
+            <p>
+              Inicia sesion como cliente para explorar obras o como artista para abrir el
+              panel editorial.
+            </p>
+          </div>
+        </div>
+
+        <div className="login-role-grid" role="tablist" aria-label="Seleccion de rol">
+          <button
+            className={`login-role${role === "customer" ? " is-active" : ""}`}
+            type="button"
+            role="tab"
+            aria-selected={role === "customer"}
+            onClick={() => chooseRole("customer")}
+          >
+            <strong>Cliente</strong>
+            <span>Explorar galeria, colecciones y fichas de obra.</span>
+          </button>
+          <button
+            className={`login-role${role === "artist" ? " is-active" : ""}`}
+            type="button"
+            role="tab"
+            aria-selected={role === "artist"}
+            onClick={() => chooseRole("artist")}
+          >
+            <strong>Artista</strong>
+            <span>Entrar al inventario y panel editorial.</span>
+          </button>
+        </div>
+
+        <form className="login-form" onSubmit={handleSubmit}>
+          <label>
+            Correo
+            <input
+              type="email"
+              value={email}
+              autoComplete="username"
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </label>
+          <label>
+            Password
+            <input
+              type="password"
+              value={password}
+              autoComplete="current-password"
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </label>
+
+          {error && <p className="login-error">{error}</p>}
+
+          <button className="btn btn--large" type="submit" disabled={loading}>
+            {loading ? "Entrando..." : `Entrar como ${role === "artist" ? "artista" : "cliente"}`}
+          </button>
+        </form>
+
+        <div className="login-demo">
+          <strong>Usuarios demo</strong>
+          <span>Cliente: cliente@galeriaviva.local / cliente123</span>
+          <span>Artista: artista@galeriaviva.local / artista123</span>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function Header({
+  activeRoute,
+  session,
+  onLogout,
+}: {
+  activeRoute: AppRoute;
+  session: UserSession;
+  onLogout: () => void;
+}) {
   const [navOpen, setNavOpen] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
 
@@ -108,7 +289,12 @@ function Header({ activeRoute }: { activeRoute: AppRoute }) {
 
       <header className="header" style={headerStyle}>
         <div className="container header__inner">
-          <a className="brand" href="/customer" aria-label="Inicio" onClick={() => setNavOpen(false)}>
+          <a
+            className="brand"
+            href={session.user.role === "artist" ? "/artist" : "/customer"}
+            aria-label="Inicio"
+            onClick={() => setNavOpen(false)}
+          >
             <span className="brand__mark" aria-hidden="true">
               <img
                 src={imageForFile("WhatsApp Image 2026-02-16 at 5.12.09 PM.jpeg")}
@@ -136,13 +322,15 @@ function Header({ activeRoute }: { activeRoute: AppRoute }) {
             </button>
             <p className="nav__eyebrow">Explora el estudio</p>
             <div className="nav__primary">
-              <a
-                className={activeRoute === "customer" ? "is-active" : ""}
-                href="/customer"
-                onClick={() => setNavOpen(false)}
-              >
-                Cliente
-              </a>
+              {session.user.role === "customer" && (
+                <a
+                  className={activeRoute === "customer" ? "is-active" : ""}
+                  href="/customer"
+                  onClick={() => setNavOpen(false)}
+                >
+                  Cliente
+                </a>
+              )}
               <details className="nav__dropdown">
                 <summary className={`nav__link${activeRoute === "gallery" ? " is-active" : ""}`}>
                   Galería
@@ -165,21 +353,26 @@ function Header({ activeRoute }: { activeRoute: AppRoute }) {
               <a href="/#contacto" onClick={() => setNavOpen(false)}>
                 Contacto
               </a>
-              <a
-                className={activeRoute === "artist" ? "is-active" : ""}
-                href="/artist"
-                onClick={() => setNavOpen(false)}
-              >
-                Artista
-              </a>
+              {session.user.role === "artist" && (
+                <a
+                  className={activeRoute === "artist" ? "is-active" : ""}
+                  href="/artist"
+                  onClick={() => setNavOpen(false)}
+                >
+                  Artista
+                </a>
+              )}
             </div>
             <div className="nav__actions">
+              <span className="session-pill">
+                {session.user.role === "artist" ? "Artista" : "Cliente"} · {session.user.name}
+              </span>
               <a className="ig-pill ig-pill--solid" href={SETTINGS.instagramUrl} target="_blank" rel="noreferrer">
                 Instagram
               </a>
-              <a className="ig-pill ig-pill--ghost" href={SETTINGS.linktreeUrl} target="_blank" rel="noreferrer">
-                Linktree
-              </a>
+              <button className="ig-pill ig-pill--ghost" type="button" onClick={onLogout}>
+                Salir
+              </button>
             </div>
           </nav>
 
@@ -1845,6 +2038,106 @@ function getAppRoute(path: string): AppRoute {
   }
 
   return "customer";
+}
+
+async function login(role: AuthRole, email: string, password: string): Promise<UserSession> {
+  try {
+    const response = await fetch("/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ role, email, password }),
+    });
+    const data = (await response.json()) as {
+      ok?: boolean;
+      token?: string;
+      user?: {
+        name?: string;
+        email?: string;
+        role?: string;
+      };
+      message?: string;
+    };
+
+    if (!response.ok || !data.token || !data.user || !isAuthRole(data.user.role)) {
+      throw new Error(data.message || "No se pudo iniciar sesion.");
+    }
+
+    return {
+      token: data.token,
+      user: {
+        name: String(data.user.name ?? ""),
+        email: String(data.user.email ?? ""),
+        role: data.user.role,
+      },
+    };
+  } catch (error) {
+    if (isLocalDev()) {
+      return loginWithLocalDemo(role, email, password);
+    }
+
+    throw error;
+  }
+}
+
+function loginWithLocalDemo(role: AuthRole, email: string, password: string): UserSession {
+  const demoUser =
+    role === "artist"
+      ? {
+          email: "artista@galeriaviva.local",
+          password: "artista123",
+          name: "Lulu Cardenas",
+          role,
+        }
+      : {
+          email: "cliente@galeriaviva.local",
+          password: "cliente123",
+          name: "Cliente demo",
+          role,
+        };
+
+  if (email.trim().toLowerCase() !== demoUser.email || password !== demoUser.password) {
+    throw new Error("Correo, password o rol incorrecto.");
+  }
+
+  return {
+    token: window.btoa(
+      JSON.stringify({
+        role: demoUser.role,
+        email: demoUser.email,
+        issuedAt: new Date().toISOString(),
+        mode: "local-dev",
+      }),
+    ),
+    user: {
+      name: demoUser.name,
+      email: demoUser.email,
+      role: demoUser.role,
+    },
+  };
+}
+
+function readStoredSession(): UserSession | null {
+  try {
+    const raw = window.localStorage.getItem("galeria-viva-session");
+    if (!raw) return null;
+
+    const session = JSON.parse(raw) as UserSession;
+    if (!session.token || !session.user || !isAuthRole(session.user.role)) return null;
+
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+function isAuthRole(role: unknown): role is AuthRole {
+  return role === "customer" || role === "artist";
+}
+
+function isLocalDev() {
+  return window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 }
 
 export default App;
