@@ -1,3 +1,11 @@
-modulos/terraform.tfvars
-modulos/.terraform/
-modulos/.terraform.lock.hcl
+# Terraform: state, plugin dir, local secrets (modulos/, modules/, etc.)
+**/.terraform/
+**/*.tfstate*
+.terraform.tfstate.lock.info
+**/terraform.tfvars
+*.auto.tfvars
+**/backend.hcl
+
+claude.md
+CLAUDE.md
+.claude

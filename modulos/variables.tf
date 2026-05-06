@@ -128,3 +128,34 @@ variable "preview_branch_excludes" {
   description = "Branches excluded from preview deployments."
   default     = []
 }
+
+variable "worker_name" {
+  type        = string
+  description = "Name of the Cloudflare Worker script."
+  default     = "paaginaludos-api"
+}
+
+variable "worker_script_path" {
+  type        = string
+  description = "Path (relative to the root module) to the Worker source file."
+  default     = "./workers/src/worker.js"
+}
+
+variable "worker_compatibility_date" {
+  type        = string
+  description = "Worker compatibility date."
+  default     = "2026-01-01"
+}
+
+variable "worker_vars" {
+  type        = map(string)
+  description = "Plain-text environment variables for the Worker."
+  default     = {}
+}
+
+variable "worker_secrets" {
+  type        = map(string)
+  description = "Secret environment variables for the Worker."
+  default     = {}
+  sensitive   = true
+}

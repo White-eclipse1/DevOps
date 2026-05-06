@@ -6,7 +6,7 @@ terraform {
   }
 }
 
-resource "cloudflare_pages_project" "pagina_ludos" {
+resource "cloudflare_pages_project" "art-shop-website" {
   account_id        = var.cloudflare_account_id
   name              = var.project_name
   production_branch = var.production_branch

@@ -1,0 +1,11 @@
+# Copy to backend.hcl and set organization + workspace (file is gitignored).
+# Then: terraform init -migrate-state -backend-config=backend.hcl
+#
+# If state was ever pushed to Git: rotate the Cloudflare API token and any Worker
+# secrets; purge sensitive blobs from history with git filter-repo or BFG Repo-Cleaner.
+
+organization = "your-terraform-cloud-org"
+
+workspaces {
+  name = "galeria-viva-infra"
+}

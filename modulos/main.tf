@@ -23,3 +23,18 @@ module "pages" {
   )
 }
 
+module "worker" {
+  source = "./workers"
+
+  cloudflare_account_id = var.cloudflare_account_id
+  worker_name           = var.worker_name
+  worker_script_path    = "${path.module}/${var.worker_script_path}"
+  compatibility_date    = var.worker_compatibility_date
+  d1_database_id = (
+    var.create_d1_database
+    ? module.db[0].database_id
+    : var.existing_d1_databases[var.d1_binding_name]
+  )
+  plain_text_vars = var.worker_vars
+  secret_vars     = var.worker_secrets
+}
