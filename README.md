@@ -23,6 +23,28 @@ Se omite por ahora la parte de imagenes Docker/Docker Hub del planning.
 
 Cloudflare Pages usa `public/_redirects` para que esas rutas funcionen como SPA.
 
+## Login Demo
+
+El acceso inicial usa un backend ligero en Cloudflare Pages Functions:
+
+```text
+POST /api/login
+```
+
+Usuarios de prueba:
+
+```text
+Cliente
+correo: cliente@galeriaviva.local
+password: cliente123
+
+Artista
+correo: artista@galeriaviva.local
+password: artista123
+```
+
+Segun el rol autenticado, React muestra automaticamente la vista cliente o la vista artista. En desarrollo local, si Vite no encuentra `/api/login`, la app usa un fallback local solo para poder probar la interfaz.
+
 ## Stack
 
 - React
@@ -97,6 +119,11 @@ Recursos creados:
 - Cloudflare Pages Project: `paaginaludos-devops`
 - Cloudflare D1: `art-db`
 - Cloudflare Worker: `art_worker`
+
+Backend actual:
+
+- `functions/api/login.js`: login usado por Cloudflare Pages.
+- `modulos/workers/src/worker.js`: endpoint `/login` equivalente para el Worker separado.
 
 Recurso pendiente del planning:
 

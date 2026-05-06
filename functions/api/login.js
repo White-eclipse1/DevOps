@@ -19,36 +19,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders,
+  });
+}
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders,
-      });
-    }
-
-    if (url.pathname === "/" || url.pathname === "/health") {
-      return Response.json({
-        ok: true,
-        service: "paaginaludos-api",
-        bindings: {
-          db: Boolean(env.DB),
-        },
-      });
-    }
-
-    if (url.pathname === "/login" && request.method === "POST") {
-      return handleLogin(request, env);
-    }
-
-    return new Response("Not found", { status: 404 });
-  },
-};
-
-async function handleLogin(request, env) {
+export async function onRequestPost({ request, env }) {
   let payload;
 
   try {
@@ -57,7 +35,7 @@ async function handleLogin(request, env) {
     return json({ ok: false, message: "El cuerpo de la solicitud no es JSON valido." }, 400);
   }
 
-  const role = payload.role === "artist" || payload.role === "customer" ? payload.role : null;
+  const role = normalizeRole(payload.role);
   const email = String(payload.email ?? "").trim().toLowerCase();
   const password = String(payload.password ?? "");
   const user = role ? DEMO_USERS[role] : null;
@@ -70,13 +48,7 @@ async function handleLogin(request, env) {
 
   return json({
     ok: true,
-    token: btoa(
-      JSON.stringify({
-        role: user.role,
-        email: user.email,
-        issuedAt: new Date().toISOString(),
-      }),
-    ),
+    token: createDemoToken(user),
     user: {
       name: user.name,
       email: user.email,
@@ -85,11 +57,30 @@ async function handleLogin(request, env) {
   });
 }
 
+export async function onRequest() {
+  return json({ ok: false, message: "Metodo no permitido." }, 405);
+}
+
+function normalizeRole(value) {
+  if (value === "artist" || value === "customer") return value;
+  return null;
+}
+
 function json(body, status = 200) {
   return Response.json(body, {
     status,
     headers: corsHeaders,
   });
+}
+
+function createDemoToken(user) {
+  const data = JSON.stringify({
+    role: user.role,
+    email: user.email,
+    issuedAt: new Date().toISOString(),
+  });
+
+  return btoa(data);
 }
 
 async function recordLogin(env, user, request) {
@@ -122,6 +113,6 @@ async function recordLogin(env, user, request) {
       )
       .run();
   } catch {
-    // Login should keep working even if audit persistence is unavailable.
+    // Login should keep working even if the audit table is unavailable.
   }
 }
