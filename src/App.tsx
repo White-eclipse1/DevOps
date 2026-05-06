@@ -1,6 +1,7 @@
 import {
   type CSSProperties,
   type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent,
   useEffect,
   useMemo,
@@ -22,10 +23,13 @@ const FEATURED_CURATION_IDS = ["p-018", "p-020", "p-013", "p-008", "p-006", "c-0
 
 type GalleryFilter = "all" | "pintura" | "ceramica" | "disponible";
 type SortMode = "newest" | "oldest" | "priceAsc" | "priceDesc";
+type AppRoute = "customer" | "gallery" | "artist";
+type ArtistStatusFilter = "all" | "available" | "sold" | "missingPrice";
+type ArtistTypeFilter = "all" | "pintura" | "ceramica";
 
 function App() {
   const path = window.location.pathname.toLowerCase();
-  const isGallery = path.includes("gallery") || path.includes("galeria");
+  const route = getAppRoute(path);
 
   useEffect(() => {
     let icon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
@@ -40,17 +44,19 @@ function App() {
 
   return (
     <>
-      <Header />
-      {isGallery ? <GalleryPage /> : <HomePage />}
+      <Header activeRoute={route} />
+      {route === "artist" ? <ArtistPage /> : route === "gallery" ? <GalleryPage /> : <HomePage />}
       <Footer />
-      <a className="ig-float" href={SETTINGS.instagramUrl} target="_blank" rel="noreferrer">
-        Mensaje por Instagram
-      </a>
+      {route !== "artist" && (
+        <a className="ig-float" href={SETTINGS.instagramUrl} target="_blank" rel="noreferrer">
+          Mensaje por Instagram
+        </a>
+      )}
     </>
   );
 }
 
-function Header() {
+function Header({ activeRoute }: { activeRoute: AppRoute }) {
   const [navOpen, setNavOpen] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
 
@@ -102,7 +108,7 @@ function Header() {
 
       <header className="header" style={headerStyle}>
         <div className="container header__inner">
-          <a className="brand" href="/" aria-label="Inicio" onClick={() => setNavOpen(false)}>
+          <a className="brand" href="/customer" aria-label="Inicio" onClick={() => setNavOpen(false)}>
             <span className="brand__mark" aria-hidden="true">
               <img
                 src={imageForFile("WhatsApp Image 2026-02-16 at 5.12.09 PM.jpeg")}
@@ -110,8 +116,8 @@ function Header() {
               />
             </span>
             <span className="brand__text">
-              <span className="brand__name">Lulú Cárdenas</span>
-              <span className="brand__sub">Pintura + Cerámica</span>
+              <span className="brand__name">Galería Viva</span>
+              <span className="brand__sub">Arte emergente</span>
             </span>
           </a>
 
@@ -130,8 +136,17 @@ function Header() {
             </button>
             <p className="nav__eyebrow">Explora el estudio</p>
             <div className="nav__primary">
+              <a
+                className={activeRoute === "customer" ? "is-active" : ""}
+                href="/customer"
+                onClick={() => setNavOpen(false)}
+              >
+                Cliente
+              </a>
               <details className="nav__dropdown">
-                <summary className="nav__link">Galería</summary>
+                <summary className={`nav__link${activeRoute === "gallery" ? " is-active" : ""}`}>
+                  Galería
+                </summary>
                 <div className="nav__dropdown-menu">
                   <a href="/gallery" onClick={() => setNavOpen(false)}>
                     Ver todo
@@ -149,6 +164,13 @@ function Header() {
               </a>
               <a href="/#contacto" onClick={() => setNavOpen(false)}>
                 Contacto
+              </a>
+              <a
+                className={activeRoute === "artist" ? "is-active" : ""}
+                href="/artist"
+                onClick={() => setNavOpen(false)}
+              >
+                Artista
               </a>
             </div>
             <div className="nav__actions">
@@ -192,8 +214,8 @@ function Header() {
 
 function HomePage() {
   useDocumentMeta(
-    "Lulú Cárdenas - Arte delulu",
-    "Portafolio de pinturas y cerámicas. Obras disponibles y comisiones.",
+    "Galería Viva - Arte emergente",
+    "Galería online para artistas emergentes, obras originales, colecciones y comisiones.",
   );
 
   const heroItems = useMemo(() => pickItemsByIds(artworks, HOME_HERO_IDS), []);
@@ -220,10 +242,10 @@ function HomePage() {
       <section className="hero">
         <div className="container hero__grid">
           <div className="hero__text">
-            <h1>Obras originales en pintura y cerámica</h1>
+            <h1>Galería Viva para arte emergente</h1>
             <p className="lead">
-              Explora mi colección de piezas únicas hechas a mano. Cada obra cuenta una
-              historia de color, textura y creatividad.
+              Explora obras originales, colecciones y fichas de artista en una experiencia
+              visual creada para exhibir talento emergente desde Cloudflare Pages.
             </p>
 
             <div className="cta">
@@ -262,8 +284,8 @@ function HomePage() {
       <section id="about" className="section">
         <div className="container about-rework">
           <div className="about-rework__intro">
-            <div className="section-badge">Acerca de mi obra</div>
-            <h2>Creando desde el corazón</h2>
+            <div className="section-badge">Perfil de artista</div>
+            <h2>Lulú Cárdenas</h2>
             <p>
               Soy una artista mexicana. Expreso mis sentidos, emociones y sentimientos por
               medio del arte. En cada pieza comparto un pedacito de mi alma.
@@ -476,7 +498,7 @@ function HomePage() {
 }
 
 function GalleryPage() {
-  useDocumentMeta("Galería - Lulú Cárdenas", "Galería de pinturas y cerámicas originales.");
+  useDocumentMeta("Galería Viva - Colecciones", "Galería de pinturas y cerámicas originales.");
 
   const initialParams = useMemo(() => new URLSearchParams(window.location.search), []);
   const [filter, setFilter] = useState<GalleryFilter>(() => parseFilter(initialParams.get("type")));
@@ -728,6 +750,414 @@ function GalleryPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+function ArtistPage() {
+  useDocumentMeta(
+    "Galería Viva - Vista artista",
+    "Panel de artista para revisar inventario, disponibilidad y detalles de obras.",
+  );
+
+  const [items, setItems] = useState<Artwork[]>(() => artworks.map((item) => ({ ...item })));
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ArtistStatusFilter>("all");
+  const [typeFilter, setTypeFilter] = useState<ArtistTypeFilter>("all");
+  const [selectedId, setSelectedId] = useState(items[0]?.id ?? "");
+
+  const collections = useMemo(
+    () =>
+      Array.from(new Set(items.map(getCollectionName).filter(Boolean))).sort((left, right) =>
+        left.localeCompare(right, "es"),
+      ),
+    [items],
+  );
+
+  const artistStats = useMemo(() => {
+    const available = items.filter((item) => item.available).length;
+    const sold = items.length - available;
+    const missingPrice = items.filter((item) => item.price === null).length;
+    const inventoryValue = items.reduce((total, item) => total + (item.available ? item.price ?? 0 : 0), 0);
+
+    return {
+      total: items.length,
+      available,
+      sold,
+      missingPrice,
+      inventoryValue,
+    };
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return items.filter((item) => {
+      if (typeFilter !== "all" && item.type !== typeFilter) return false;
+      if (statusFilter === "available" && !item.available) return false;
+      if (statusFilter === "sold" && item.available) return false;
+      if (statusFilter === "missingPrice" && item.price !== null) return false;
+
+      if (!normalizedQuery) return true;
+
+      return [
+        item.title,
+        item.medium,
+        String(item.year ?? ""),
+        item.size,
+        item.type,
+        getCollectionName(item),
+      ]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalizedQuery);
+    });
+  }, [items, query, statusFilter, typeFilter]);
+
+  const selectedItem =
+    items.find((item) => item.id === selectedId) ?? filteredItems[0] ?? items[0] ?? null;
+
+  useEffect(() => {
+    if (!selectedItem) return;
+    if (selectedItem.id !== selectedId) setSelectedId(selectedItem.id);
+  }, [selectedId, selectedItem]);
+
+  function updateArtwork<K extends keyof Artwork>(id: string, key: K, value: Artwork[K]) {
+    setItems((currentItems) =>
+      currentItems.map((item) => (item.id === id ? { ...item, [key]: value } : item)),
+    );
+  }
+
+  function toggleAvailability(id: string) {
+    setItems((currentItems) =>
+      currentItems.map((item) =>
+        item.id === id ? { ...item, available: !item.available } : item,
+      ),
+    );
+  }
+
+  return (
+    <main id="contenido" className="artist-shell">
+      <section className="artist-hero">
+        <div className="container artist-hero__inner">
+          <div>
+            <div className="section-badge">Vista artista</div>
+            <h1>Panel editorial</h1>
+            <p className="lead">
+              Controla el catálogo versionado, revisa disponibilidad y prepara las obras que
+              verá el cliente en la galería pública.
+            </p>
+          </div>
+          <div className="artist-hero__actions">
+            <a className="btn" href="/customer">
+              Ver como cliente
+            </a>
+            <a className="btn btn--ghost" href="/gallery">
+              Abrir galería
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section className="container artist-summary-grid" aria-label="Resumen de inventario">
+        <ArtistStatCard label="Obras" value={artistStats.total} />
+        <ArtistStatCard label="Disponibles" value={artistStats.available} />
+        <ArtistStatCard label="Vendidas" value={artistStats.sold} />
+        <ArtistStatCard label="Sin precio" value={artistStats.missingPrice} />
+        <ArtistStatCard
+          label="Valor disponible"
+          value={`$${artistStats.inventoryValue.toLocaleString("es-MX")}`}
+        />
+      </section>
+
+      <section className="container artist-workspace">
+        <div className="artist-panel artist-panel--wide">
+          <div className="artist-panel__head">
+            <div>
+              <div className="section-badge">Inventario</div>
+              <h2>Obras del catálogo</h2>
+            </div>
+            <span className="artist-count">{filteredItems.length} visibles</span>
+          </div>
+
+          <div className="artist-controls">
+            <input
+              className="search"
+              type="search"
+              value={query}
+              placeholder="Buscar por obra, colección, año o técnica"
+              aria-label="Buscar en inventario"
+              onChange={(event) => setQuery(event.target.value)}
+            />
+            <select
+              className="select"
+              value={typeFilter}
+              aria-label="Filtrar por tipo"
+              onChange={(event) => setTypeFilter(event.target.value as ArtistTypeFilter)}
+            >
+              <option value="all">Todos los tipos</option>
+              <option value="pintura">Pinturas</option>
+              <option value="ceramica">Cerámicas</option>
+            </select>
+            <select
+              className="select"
+              value={statusFilter}
+              aria-label="Filtrar por estado"
+              onChange={(event) => setStatusFilter(event.target.value as ArtistStatusFilter)}
+            >
+              <option value="all">Todos los estados</option>
+              <option value="available">Disponibles</option>
+              <option value="sold">Vendidas</option>
+              <option value="missingPrice">Sin precio</option>
+            </select>
+          </div>
+
+          <div className="artist-list" role="list" aria-label="Obras filtradas">
+            {filteredItems.map((item) => (
+              <ArtistArtworkRow
+                key={item.id}
+                item={item}
+                selected={selectedItem?.id === item.id}
+                onSelect={() => setSelectedId(item.id)}
+                onToggleAvailability={() => toggleAvailability(item.id)}
+              />
+            ))}
+            {filteredItems.length === 0 && (
+              <div className="empty-state artist-empty">
+                <h3>No hay obras con esos filtros</h3>
+                <p>Ajusta la búsqueda o limpia los filtros para volver al inventario completo.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <aside className="artist-panel">
+          <div className="artist-panel__head">
+            <div>
+              <div className="section-badge">Ficha de obra</div>
+              <h2>Detalle editable</h2>
+            </div>
+          </div>
+
+          {selectedItem && (
+            <div className="artist-editor">
+              <img
+                className="artist-editor__image"
+                src={selectedItem.image}
+                alt={selectedItem.title}
+                loading="lazy"
+              />
+
+              <label>
+                Título
+                <input
+                  value={selectedItem.title}
+                  onChange={(event) => updateArtwork(selectedItem.id, "title", event.target.value)}
+                />
+              </label>
+
+              <div className="artist-editor__grid">
+                <label>
+                  Tipo
+                  <select
+                    value={selectedItem.type}
+                    onChange={(event) =>
+                      updateArtwork(selectedItem.id, "type", event.target.value as Artwork["type"])
+                    }
+                  >
+                    <option value="pintura">Pintura</option>
+                    <option value="ceramica">Cerámica</option>
+                  </select>
+                </label>
+
+                <label>
+                  Año
+                  <input
+                    type="number"
+                    value={selectedItem.year ?? ""}
+                    onChange={(event) =>
+                      updateArtwork(
+                        selectedItem.id,
+                        "year",
+                        event.target.value ? Number(event.target.value) : null,
+                      )
+                    }
+                  />
+                </label>
+              </div>
+
+              <label>
+                Colección
+                <input
+                  list="artist-collections"
+                  value={getCollectionName(selectedItem)}
+                  onChange={(event) =>
+                    updateArtwork(
+                      selectedItem.id,
+                      "collection",
+                      event.target.value.trim() || undefined,
+                    )
+                  }
+                />
+              </label>
+              <datalist id="artist-collections">
+                {collections.map((collection) => (
+                  <option key={collection} value={collection} />
+                ))}
+              </datalist>
+
+              <label>
+                Técnica
+                <input
+                  value={selectedItem.medium}
+                  onChange={(event) => updateArtwork(selectedItem.id, "medium", event.target.value)}
+                />
+              </label>
+
+              <div className="artist-editor__grid">
+                <label>
+                  Dimensiones
+                  <input
+                    value={selectedItem.size}
+                    onChange={(event) => updateArtwork(selectedItem.id, "size", event.target.value)}
+                  />
+                </label>
+
+                <label>
+                  Precio MXN
+                  <input
+                    type="number"
+                    min="0"
+                    value={selectedItem.price ?? ""}
+                    onChange={(event) =>
+                      updateArtwork(
+                        selectedItem.id,
+                        "price",
+                        event.target.value ? Number(event.target.value) : null,
+                      )
+                    }
+                  />
+                </label>
+              </div>
+
+              <label>
+                Descripción
+                <textarea
+                  rows={5}
+                  value={selectedItem.description}
+                  onChange={(event) =>
+                    updateArtwork(selectedItem.id, "description", event.target.value)
+                  }
+                />
+              </label>
+
+              <label className="artist-checkbox">
+                <input
+                  type="checkbox"
+                  checked={selectedItem.available}
+                  onChange={() => toggleAvailability(selectedItem.id)}
+                />
+                Disponible para venta
+              </label>
+
+              <div className="artist-editor__actions">
+                <a className="btn btn--ghost" href={`/gallery?open=${encodeURIComponent(selectedItem.id)}`}>
+                  Vista cliente
+                </a>
+                <button className="btn" type="button" onClick={() => toggleAvailability(selectedItem.id)}>
+                  {selectedItem.available ? "Marcar vendida" : "Marcar disponible"}
+                </button>
+              </div>
+            </div>
+          )}
+        </aside>
+      </section>
+
+      <section className="container artist-flow" aria-label="Flujo editorial">
+        <div className="artist-panel artist-panel--flow">
+          <div className="artist-panel__head">
+            <div>
+              <div className="section-badge">Flujo editorial</div>
+              <h2>Del catálogo al deploy</h2>
+            </div>
+          </div>
+
+          <div className="artist-flow__grid">
+            <ProcessCard number="01" title="Contenido">
+              Obras, artistas y colecciones se mantienen como contenido versionado.
+            </ProcessCard>
+            <ProcessCard number="02" title="Validación">
+              El build revisa TypeScript y prepara la versión lista para publicación.
+            </ProcessCard>
+            <ProcessCard number="03" title="Commit">
+              Los cambios se suben a GitHub en ramas de contenido o funcionalidad.
+            </ProcessCard>
+            <ProcessCard number="04" title="Cloudflare">
+              Pages reconstruye y publica la galería en el edge desde la rama principal.
+            </ProcessCard>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function ArtistStatCard({ label, value }: { label: string; value: string | number }) {
+  return (
+    <div className="artist-stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function ArtistArtworkRow({
+  item,
+  selected,
+  onSelect,
+  onToggleAvailability,
+}: {
+  item: Artwork;
+  selected: boolean;
+  onSelect: () => void;
+  onToggleAvailability: () => void;
+}) {
+  function handleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onSelect();
+    }
+  }
+
+  return (
+    <div
+      className={`artist-row${selected ? " is-selected" : ""}`}
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={handleKeyDown}
+    >
+      <img src={item.image} alt="" loading="lazy" />
+      <div className="artist-row__main">
+        <strong>{item.title}</strong>
+        <span>
+          {artworkTypeLabel(item)} · {getCollectionName(item) || "Sin colección"}
+        </span>
+      </div>
+      <div className="artist-row__meta">
+        <span>{safePrice(item)}</span>
+        <StatusPill item={item} />
+      </div>
+      <button
+        className="artist-mini-action"
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          onToggleAvailability();
+        }}
+      >
+        {item.available ? "Vender" : "Reactivar"}
+      </button>
+    </div>
   );
 }
 
@@ -1035,12 +1465,14 @@ function Footer() {
     <footer className="footer">
       <div className="container footer__inner">
         <div className="footer-brand">
-          <strong>Lulú Cárdenas</strong>
-          <small>Arte original desde Zapopan, México</small>
+            <strong>Galería Viva</strong>
+            <small>Arte emergente desde Zapopan, México</small>
         </div>
         <div className="footer__links">
+          <a href="/customer">Cliente</a>
           <a href="/gallery?type=pintura">Pinturas</a>
           <a href="/gallery?type=ceramica">Cerámicas</a>
+          <a href="/artist">Artista</a>
           <a href="/#contacto">Contacto</a>
           <a href={SETTINGS.instagramUrl} target="_blank" rel="noreferrer">
             Instagram ↗
@@ -1052,7 +1484,7 @@ function Footer() {
       </div>
       <div className="container" style={{ borderTop: "1px solid var(--line)", paddingTop: 16, marginTop: 16 }}>
         <small style={{ display: "block", textAlign: "center", color: "var(--muted)" }}>
-          © {year} Lulú Cárdenas. Todos los derechos reservados.
+          © {year} Galería Viva. Todos los derechos reservados.
         </small>
       </div>
     </footer>
@@ -1401,6 +1833,18 @@ function resultsLabel(
 
 function safePrice(item: Artwork) {
   return typeof item.price === "number" ? `$${item.price.toLocaleString("es-MX")} MXN` : "Precio a consulta";
+}
+
+function getAppRoute(path: string): AppRoute {
+  if (path.includes("artist") || path.includes("artista") || path.includes("admin")) {
+    return "artist";
+  }
+
+  if (path.includes("gallery") || path.includes("galeria")) {
+    return "gallery";
+  }
+
+  return "customer";
 }
 
 export default App;
