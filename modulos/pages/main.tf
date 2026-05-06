@@ -11,6 +11,10 @@ resource "cloudflare_pages_project" "art-shop-website" {
   name              = var.project_name
   production_branch = var.production_branch
 
+  lifecycle {
+    prevent_destroy = true
+  }
+
   build_config {
     build_command   = var.build_command
     destination_dir = var.destination_dir
