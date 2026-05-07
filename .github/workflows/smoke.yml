@@ -1,0 +1,32 @@
+name: Smoke Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "URL base a probar (sin / final)"
+        required: false
+        default: "https://paaginaludos.pages.dev/"
+  schedule:
+    # Diario a las 12:00 UTC (06:00 CDMX/GDL)
+    - cron: "0 12 * * *"
+
+jobs:
+  smoke:
+    name: Validar deploy productivo
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Ejecutar smoke tests
+        env:
+          SMOKE_BASE_URL: ${{ github.event.inputs.base_url || vars.SMOKE_BASE_URL || 'https://paaginaludos.pages.dev/' }}
+        run: node scripts/smoke-test.mjs

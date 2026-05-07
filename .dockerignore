@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.git/
+.github/
+**/*.log
+.terraform/
+modulos/
+src/
+public/
+assets/css/
+*.tfstate*
+*.tfvars
+.claude/
+claude.md
+CLAUDE.md
+.env
+.env.*
