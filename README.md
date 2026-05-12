@@ -9,7 +9,7 @@ El enfoque actual es tener una experiencia publica para clientes y una vista lig
 - Vista cliente con home, obra destacada, perfil artistico, proceso creativo, contacto y galeria publica.
 - Galeria con filtros por tipo, disponibilidad, coleccion, busqueda y ordenamiento.
 - Vista artista en `/artist` con resumen de inventario, filtros, seleccion de obra y editor local de ficha.
-- Catalogo versionado en `assets/data/artworks.json`.
+- Catalogo versionado en `frontend/assets/data/artworks.json`.
 - Deploy en Cloudflare Pages desde GitHub.
 - Infraestructura Terraform para Pages, Worker y D1.
 
@@ -50,7 +50,7 @@ Segun el rol autenticado, React muestra automaticamente la vista cliente o la vi
 - React
 - Vite
 - TypeScript
-- CSS propio en `assets/css/styles.css`
+- CSS propio en `frontend/assets/css/styles.css`
 - Cloudflare Pages
 - Cloudflare Worker
 - Cloudflare D1
@@ -61,25 +61,35 @@ Segun el rol autenticado, React muestra automaticamente la vista cliente o la vi
 
 ```text
 .
-├── assets/
-│   ├── css/styles.css
-│   ├── data/artworks.json
-│   └── img/
-├── modulos/
+├── frontend/
+│   ├── assets/
+│   │   ├── css/styles.css
+│   │   ├── data/artworks.json
+│   │   └── img/
+│   ├── functions/api/login.js
+│   ├── public/_redirects
+│   ├── scripts/
+│   ├── src/
+│   │   ├── App.tsx
+│   │   ├── artworks.ts
+│   │   ├── main.tsx
+│   │   └── types.ts
+│   ├── package.json
+│   └── vite.config.ts
+├── backend/
+│   ├── src/worker.js
+│   ├── src/worker.test.js
+│   ├── package.json
+│   └── wrangler.toml
+├── infra/
 │   ├── db/
 │   ├── pages/
 │   ├── workers/
 │   ├── main.tf
 │   ├── providers.tf
 │   └── variables.tf
-├── public/_redirects
-├── src/
-│   ├── App.tsx
-│   ├── artworks.ts
-│   ├── main.tsx
-│   └── types.ts
-├── package.json
-└── README.md
+├── docker/
+└── .github/workflows/
 ```
 
 ## Desarrollo Local
@@ -108,11 +118,11 @@ Cloudflare Pages debe usar:
 - Build command: `npm run build`
 - Build output directory: `dist`
 - Production branch: `main`
-- Root directory: vacio
+- Root directory: `frontend`
 
 ## Infraestructura
 
-La infraestructura vive en `modulos/`.
+La infraestructura vive en `infra/`.
 
 Recursos creados:
 
@@ -122,17 +132,17 @@ Recursos creados:
 
 Backend actual:
 
-- `functions/api/login.js`: login usado por Cloudflare Pages.
-- `modulos/workers/src/worker.js`: endpoint `/login` equivalente para el Worker separado.
+- `frontend/functions/api/login.js`: login usado por Cloudflare Pages.
+- `backend/src/worker.js`: endpoint `/login` equivalente para el Worker separado.
 
 Recurso pendiente del planning:
 
-- Cloudflare R2 para almacenar imagenes fuera del repositorio. Por ahora las imagenes viven en `assets/img/`.
+- Cloudflare R2 para almacenar imagenes fuera del repositorio. Por ahora las imagenes viven en `frontend/assets/img/`.
 
 Comandos principales:
 
 ```powershell
-cd modulos
+cd infra
 terraform init -reconfigure
 terraform plan
 terraform apply
@@ -145,7 +155,7 @@ terraform apply
 Las obras se administran por ahora en:
 
 ```text
-assets/data/artworks.json
+frontend/assets/data/artworks.json
 ```
 
 Cada obra contiene:
