@@ -1,6 +1,7 @@
 name = "art-worker"
 main = "src/worker.js"
 compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
 
 
 # --- Ambiente Dev ---
@@ -12,7 +13,7 @@ vars = { ENVIRONMENT = "dev" }
 binding = "DB"
 database_name = "art-db-dev"
 # Replace with output of: wrangler d1 create art-db-dev
-database_id = "REPLACE_WITH_DEV_D1_ID"
+database_id = "d4cbf7ca-26a9-481e-8589-5089c2e24fdd"
 
 # --- Ambiente Production ---
 [env.production]
@@ -22,4 +23,5 @@ vars = { ENVIRONMENT = "production" }
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "art-db"
-database_id = "1ef566d7-09d5-4729-bbe4-df79969a21f6"
+# IMPORTANTE: Reemplaza este ID por el ID real de tu base de datos D1 en Cloudflare
+database_id = "PON_AQUI_TU_NUEVO_DATABASE_ID"
