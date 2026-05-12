@@ -37,7 +37,7 @@ module "worker" {
   d1_database_id = (
     var.create_d1_database
     ? module.db[0].database_id
-    : var.existing_d1_databases[var.d1_binding_name]
+    : lookup(var.existing_d1_databases, var.d1_binding_name, "")
   )
   plain_text_vars = var.worker_vars
   secret_vars     = var.worker_secrets

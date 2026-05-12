@@ -1,25 +1,46 @@
 name = "art-worker"
 main = "src/worker.js"
 compatibility_date = "2026-01-01"
-account_id = "f7aaab86d474fca548d8d9c1e8695390"
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+[version_metadata]
+binding = "CF_VERSION_METADATA"
 
 # --- Ambiente Dev ---
 [env.dev]
 name = "art-worker-dev"
-vars = { ENVIRONMENT = "dev" }
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+tail_consumers = [{ service = "axiom-tail-dev" }]
+
+[env.dev.vars]
+ENVIRONMENT = "dev"
+
+[env.dev.version_metadata]
+binding = "CF_VERSION_METADATA"
 
 [[env.dev.d1_databases]]
 binding = "DB"
 database_name = "art-db-dev"
-# Replace with output of: wrangler d1 create art-db-dev
-database_id = "REPLACE_WITH_DEV_D1_ID"
+database_id = "d4cbf7ca-26a9-481e-8589-5089c2e24fdd"
 
 # --- Ambiente Production ---
 [env.production]
 name = "art-worker"
-vars = { ENVIRONMENT = "production" }
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+tail_consumers = [{ service = "axiom-tail" }]
+
+[env.production.vars]
+ENVIRONMENT = "production"
+
+[env.production.version_metadata]
+binding = "CF_VERSION_METADATA"
 
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "art-db"
-database_id = "1ef566d7-09d5-4729-bbe4-df79969a21f6"
+database_id = "d4cbf7ca-26a9-481e-8589-5089c2e24fdd"

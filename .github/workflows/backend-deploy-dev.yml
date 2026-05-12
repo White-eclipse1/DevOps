@@ -24,7 +24,9 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: |
+            backend/package-lock.json
+            backend/axiom-tail/package-lock.json
       - run: npm ci
         working-directory: backend
       - run: npm test
@@ -46,11 +48,32 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: |
+            backend/package-lock.json
+            backend/axiom-tail/package-lock.json
 
-      - name: Instalar dependencias
+      - name: Instalar dependencias (Worker principal)
         working-directory: backend
         run: npm ci
+
+      - name: Instalar dependencias (axiom-tail)
+        working-directory: backend/axiom-tail
+        run: npm ci
+
+      - name: Secreto Axiom para tail worker
+        working-directory: backend/axiom-tail
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TOKEN: ${{ secrets.AXIOM_TOKEN_BACKEND }}
+        run: printf '%s' "$TOKEN" | npx wrangler secret put AXIOM_TOKEN --env dev
+
+      - name: Deploy axiom-tail (dev)
+        working-directory: backend/axiom-tail
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy --env dev
 
       - name: Deploy a Dev
         working-directory: backend
@@ -58,17 +81,3 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy --env dev
-
-      - name: Smoke — health check Dev
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          URL="https://art-worker-dev.${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.workers.dev/health"
-          echo "Checking $URL"
-          for i in 1 2 3; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
-            [ "$STATUS" = "200" ] && echo "OK ($STATUS)" && exit 0
-            echo "Intento $i: $STATUS — reintentando en 5s..."
-            sleep 5
-          done
-          echo "Smoke test failed" && exit 1

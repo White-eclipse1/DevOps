@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { artworks, fallbackImage, faviconImage } from "./artworks";
+import { fetchArtworks, updateArtworkInDb, createArtworkInDb, imageUrl, fallbackImage, faviconImage } from "./artworks";
 import type { Artwork } from "./types";
 
 const SETTINGS = {
@@ -41,6 +41,20 @@ function App() {
   const path = window.location.pathname.toLowerCase();
   const route = getAppRoute(path);
   const [session, setSession] = useState<UserSession | null>(() => readStoredSession());
+  const [globalArtworks, setGlobalArtworks] = useState<Artwork[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+
+  useEffect(() => {
+    fetchArtworks()
+      .then((data) => {
+        setGlobalArtworks(data);
+        setLoadingData(false);
+      })
+      .catch((err) => {
+        console.error("Error cargando obras:", err);
+        setLoadingData(false);
+      });
+  }, []);
 
   useEffect(() => {
     let icon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
@@ -90,12 +104,14 @@ function App() {
   return (
     <>
       <Header activeRoute={effectiveRoute} session={session} onLogout={() => setSession(null)} />
-      {effectiveRoute === "artist" ? (
-        <ArtistPage />
+      {loadingData ? (
+        <div style={{ textAlign: "center", padding: "120px 20px" }}>Cargando catálogo de obras...</div>
+      ) : effectiveRoute === "artist" ? (
+        <ArtistPage artworks={globalArtworks} />
       ) : effectiveRoute === "gallery" ? (
-        <GalleryPage />
+        <GalleryPage artworks={globalArtworks} />
       ) : (
-        <HomePage />
+        <HomePage artworks={globalArtworks} />
       )}
       <Footer />
       {effectiveRoute !== "artist" && (
@@ -155,7 +171,7 @@ function LoginPage({ onLogin }: { onLogin: (session: UserSession) => void }) {
       <section className="login-panel" aria-labelledby="login-title">
         <div className="login-panel__brand">
           <span className="brand__mark" aria-hidden="true">
-            <img src={imageForFile("WhatsApp Image 2026-02-16 at 5.12.09 PM.jpeg")} alt="" />
+            <img src={imageUrl("WhatsApp Image 2026-02-16 at 5.12.09 PM.jpeg")} alt="" />
           </span>
           <div>
             <div className="section-badge">Galeria Viva</div>
@@ -296,10 +312,7 @@ function Header({
             onClick={() => setNavOpen(false)}
           >
             <span className="brand__mark" aria-hidden="true">
-              <img
-                src={imageForFile("WhatsApp Image 2026-02-16 at 5.12.09 PM.jpeg")}
-                alt=""
-              />
+              <img src={imageUrl("WhatsApp Image 2026-02-16 at 5.12.09 PM.jpeg")} alt="" />
             </span>
             <span className="brand__text">
               <span className="brand__name">Galería Viva</span>
@@ -405,14 +418,14 @@ function Header({
   );
 }
 
-function HomePage() {
+function HomePage({ artworks }: { artworks: Artwork[] }) {
   useDocumentMeta(
     "Galería Viva - Arte emergente",
     "Galería online para artistas emergentes, obras originales, colecciones y comisiones.",
   );
 
-  const heroItems = useMemo(() => pickItemsByIds(artworks, HOME_HERO_IDS), []);
-  const featuredItems = useMemo(() => pickItemsByIds(artworks, FEATURED_CURATION_IDS), []);
+  const heroItems = useMemo(() => pickItemsByIds(artworks, HOME_HERO_IDS), [artworks]);
+  const featuredItems = useMemo(() => pickItemsByIds(artworks, FEATURED_CURATION_IDS), [artworks]);
   const [spotlight, ...secondary] = featuredItems;
 
   function handleContactSubmit(event: FormEvent<HTMLFormElement>) {
@@ -690,7 +703,7 @@ function HomePage() {
   );
 }
 
-function GalleryPage() {
+function GalleryPage({ artworks }: { artworks: Artwork[] }) {
   useDocumentMeta("Galería Viva - Colecciones", "Galería de pinturas y cerámicas originales.");
 
   const initialParams = useMemo(() => new URLSearchParams(window.location.search), []);
@@ -703,7 +716,7 @@ function GalleryPage() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<SortMode>("newest");
 
-  const primaryItems = useMemo(() => getPrimaryFilteredItems(artworks, filter), [filter]);
+  const primaryItems = useMemo(() => getPrimaryFilteredItems(artworks, filter), [filter, artworks]);
   const collectionOptions = useMemo(() => getCollectionOptions(primaryItems), [primaryItems]);
 
   useEffect(() => {
@@ -946,7 +959,7 @@ function GalleryPage() {
   );
 }
 
-function ArtistPage() {
+function ArtistPage({ artworks }: { artworks: Artwork[] }) {
   useDocumentMeta(
     "Galería Viva - Vista artista",
     "Panel de artista para revisar inventario, disponibilidad y detalles de obras.",
@@ -956,6 +969,7 @@ function ArtistPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ArtistStatusFilter>("all");
   const [typeFilter, setTypeFilter] = useState<ArtistTypeFilter>("all");
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedId, setSelectedId] = useState(items[0]?.id ?? "");
 
   const collections = useMemo(
@@ -1028,6 +1042,49 @@ function ArtistPage() {
     );
   }
 
+  async function saveChanges() {
+    if (!selectedItem) return;
+    setIsSaving(true);
+    try {
+      if (selectedItem.id.startsWith("draft-")) {
+        // Es una obra nueva
+        const realId = `${selectedItem.type === "ceramica" ? "c" : "p"}-${Date.now()}`;
+        const artworkToSave = { ...selectedItem, id: realId };
+        await createArtworkInDb(artworkToSave);
+        setItems((currentItems) => currentItems.map((item) => (item.id === selectedItem.id ? artworkToSave : item)));
+        setSelectedId(realId);
+        alert("¡Nueva obra creada y guardada exitosamente!");
+      } else {
+        await updateArtworkInDb(selectedItem);
+        alert("¡Obra actualizada exitosamente en la base de datos!");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Hubo un error al intentar guardar los cambios.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  function handleCreateNew() {
+    const newId = `draft-${Date.now()}`;
+    const newArtwork: Artwork = {
+      id: newId,
+      title: "Nueva obra",
+      type: "pintura",
+      available: true,
+      image: fallbackImage, // Imagen temporal
+      year: new Date().getFullYear(),
+      medium: "",
+      size: "",
+      price: null,
+      description: "",
+    };
+    setItems((currentItems) => [newArtwork, ...currentItems]);
+    setSelectedId(newId);
+    setQuery("");
+  }
+
   return (
     <main id="contenido" className="artist-shell">
       <section className="artist-hero">
@@ -1069,7 +1126,10 @@ function ArtistPage() {
               <div className="section-badge">Inventario</div>
               <h2>Obras del catálogo</h2>
             </div>
-            <span className="artist-count">{filteredItems.length} visibles</span>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <span className="artist-count">{filteredItems.length} visibles</span>
+              <button className="btn btn--small" type="button" onClick={handleCreateNew}>+ Nueva obra</button>
+            </div>
           </div>
 
           <div className="artist-controls">
@@ -1258,6 +1318,9 @@ function ArtistPage() {
                 </a>
                 <button className="btn" type="button" onClick={() => toggleAvailability(selectedItem.id)}>
                   {selectedItem.available ? "Marcar vendida" : "Marcar disponible"}
+                </button>
+                <button className="btn btn--light" type="button" onClick={saveChanges} disabled={isSaving}>
+                  {isSaving ? "Guardando..." : "Guardar cambios"}
                 </button>
               </div>
             </div>
@@ -1818,10 +1881,6 @@ function useDocumentMeta(title: string, description: string) {
     const meta = document.querySelector<HTMLMetaElement>("meta[name='description']");
     if (meta) meta.content = description;
   }, [description, title]);
-}
-
-function imageForFile(fileName: string) {
-  return artworks.find((item) => item.image.includes(fileName))?.image ?? faviconImage;
 }
 
 function pickItemsByIds(data: Artwork[], ids: string[]) {

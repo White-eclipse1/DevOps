@@ -1,0 +1,24 @@
+// Asegurate de tener esta dependencia en backend/package.json
+// Si no la tienes, corre desde dentro de la carpeta backend/:
+//
+//     cd backend
+//     npm install @sentry/cloudflare
+//
+// Eso lo agrega solo al package.json y al package-lock.json.
+
+{
+  "name": "galeria-viva-backend",
+  "type": "module",
+  "dependencies": {
+    "@sentry/cloudflare": "^10.35.0"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0",
+    "vitest": "^2.1.0"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "vitest run"
+  }
+}

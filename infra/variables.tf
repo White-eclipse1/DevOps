@@ -18,7 +18,7 @@ variable "cloudflare_zone_id" {
 variable "pages_project_name" {
   type        = string
   description = "Name of the Cloudflare Pages project."
-  default     = "paaginaludos"
+  default     = "paaginaludos-devops"
 }
 
 variable "pages_domain" {
@@ -30,13 +30,13 @@ variable "pages_domain" {
 variable "github_owner" {
   type        = string
   description = "GitHub organization or username that owns the repository connected to Pages."
-  default     = ""
+  default     = "White-eclipse1"
 }
 
 variable "github_repo" {
   type        = string
   description = "GitHub repository name connected to Pages."
-  default     = ""
+  default     = "DevOps"
 }
 
 variable "production_branch" {
@@ -60,7 +60,7 @@ variable "destination_dir" {
 variable "root_dir" {
   type        = string
   description = "Root directory where Cloudflare Pages should run the build."
-  default     = ""
+  default     = "frontend"
 }
 
 variable "pages_environment_variables" {
@@ -90,7 +90,9 @@ variable "d1_binding_name" {
 variable "existing_d1_databases" {
   type        = map(string)
   description = "Existing D1 bindings to attach to Pages, where the key is the binding name and the value is the database ID."
-  default     = {}
+  default     = {
+    "DB" = "d4cbf7ca-26a9-481e-8589-5089c2e24fdd"
+  }
 }
 
 variable "deployments_enabled" {

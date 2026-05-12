@@ -30,10 +30,16 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: |
+            backend/package-lock.json
+            backend/axiom-tail/package-lock.json
 
-      - name: Instalar dependencias
+      - name: Instalar dependencias (Worker principal)
         working-directory: backend
+        run: npm ci
+
+      - name: Instalar dependencias (axiom-tail)
+        working-directory: backend/axiom-tail
         run: npm ci
 
       - name: Pruebas unitarias
@@ -42,4 +48,8 @@ jobs:
 
       - name: Dry-run bundle (valida compilacion sin deploy)
         working-directory: backend
+        run: npx wrangler deploy --dry-run --env production --outdir dist
+
+      - name: Dry-run bundle axiom-tail
+        working-directory: backend/axiom-tail
         run: npx wrangler deploy --dry-run --env production --outdir dist
