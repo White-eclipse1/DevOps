@@ -48,7 +48,7 @@ export default {
   },
 };
 
-async function handleLogin(request, env) {
+export async function handleLogin(request, env) {
   let payload;
 
   try {

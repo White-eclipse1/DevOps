@@ -1,0 +1,63 @@
+name: Frontend Deploy — Dev
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build y deploy preview → Pages (develop)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Validar manifest + pruebas unitarias
+        run: npm run validate && npm test
+
+      - name: Build de produccion (Vite)
+        run: npm run build
+
+      - name: Deploy a Cloudflare Pages (rama develop)
+        id: pages-deploy
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: paaginaludos
+          directory: dist
+          branch: develop
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Mostrar URL del preview
+        run: echo "Preview URL ${{ steps.pages-deploy.outputs.deployment-url }}"
+
+      - name: Smoke — verificar preview
+        run: |
+          URL="${{ steps.pages-deploy.outputs.deployment-url }}"
+          echo "Checking $URL"
+          for i in 1 2 3; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+            [ "$STATUS" = "200" ] && echo "OK ($STATUS)" && exit 0
+            echo "Intento $i: $STATUS — reintentando en 10s..."
+            sleep 10
+          done
+          echo "Smoke test failed" && exit 1
