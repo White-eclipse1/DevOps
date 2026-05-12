@@ -1,0 +1,23 @@
+name = "art-worker"
+main = "src/worker.js"
+compatibility_date = "2026-01-01"
+account_id = "f7aaab86d474fca548d8d9c1e8695390"
+
+# --- Ambiente Dev ---
+[env.dev]
+name = "art-worker-dev"
+
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "art-db-dev"
+# Replace with output of: wrangler d1 create art-db-dev
+database_id = "REPLACE_WITH_DEV_D1_ID"
+
+# --- Ambiente Production ---
+[env.production]
+name = "art-worker"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "art-db"
+database_id = "1ef566d7-09d5-4729-bbe4-df79969a21f6"
