@@ -60,8 +60,10 @@ jobs:
         run: npx wrangler deploy --env production
 
       - name: Smoke — health check Production
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          URL="https://art-worker.f7aaab86d474fca548d8d9c1e8695390.workers.dev/health"
+          URL="https://art-worker.${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.workers.dev/health"
           echo "Checking $URL"
           for i in 1 2 3; do
             STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
