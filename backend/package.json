@@ -4,6 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "dev": "wrangler dev --env dev",
+    "dev:remote": "wrangler dev --env dev --remote",
     "test": "vitest run",
     "test:watch": "vitest",
     "deploy:dev": "wrangler deploy --env dev",
