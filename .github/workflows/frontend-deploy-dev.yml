@@ -9,6 +9,10 @@ concurrency:
   group: frontend-deploy-dev
   cancel-in-progress: false
 
+defaults:
+  run:
+    working-directory: frontend
+
 jobs:
   deploy:
     name: Build y deploy preview → Pages (develop)
@@ -26,6 +30,7 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Instalar dependencias
         run: npm ci
@@ -43,7 +48,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: paaginaludos
-          directory: dist
+          directory: frontend/dist
           branch: develop
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
 
