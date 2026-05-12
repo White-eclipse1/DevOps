@@ -9,9 +9,15 @@ terraform {
 resource "cloudflare_workers_script" "script" {
   account_id         = var.cloudflare_account_id
   name               = var.worker_name
-  content            = file(var.worker_script_path)
+  # Wrangler owns the script content — deploy via backend-deploy-{dev,prod} pipeline.
+  # Terraform manages bindings and infra only.
+  content            = "export default { fetch: () => new Response('ok') };"
   module             = true
   compatibility_date = var.compatibility_date
+
+  lifecycle {
+    ignore_changes = [content]
+  }
 
   d1_database_binding {
     name        = "DB"

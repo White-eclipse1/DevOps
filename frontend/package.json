@@ -13,13 +13,14 @@
     "smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
+    "@sentry/react": "^10.52.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.7.0",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.7.0",
     "typescript": "^5.9.3",
     "vite": "^6.4.1",
     "vitest": "^2.1.0"

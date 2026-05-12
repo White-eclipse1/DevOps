@@ -5,8 +5,8 @@ on:
     branches: [main]
     paths:
       - "docker/**"
-      - "scripts/**"
-      - "assets/data/**"
+      - "frontend/scripts/**"
+      - "frontend/assets/data/**"
       - ".github/workflows/docker.yml"
   workflow_dispatch:
 

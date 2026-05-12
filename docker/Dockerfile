@@ -15,9 +15,9 @@ WORKDIR /workspace
 
 # Solo se copia lo necesario para correr scripts standalone
 # (los scripts no tienen dependencias npm, así no necesitamos npm install)
-COPY --chown=galeria:galeria scripts/ ./scripts/
-COPY --chown=galeria:galeria assets/data/ ./assets/data/
-COPY --chown=galeria:galeria assets/img/ ./assets/img/
+COPY --chown=galeria:galeria frontend/scripts/ ./scripts/
+COPY --chown=galeria:galeria frontend/assets/data/ ./assets/data/
+COPY --chown=galeria:galeria frontend/assets/img/ ./assets/img/
 
 USER galeria
 
