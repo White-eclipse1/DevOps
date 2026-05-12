@@ -23,5 +23,4 @@ vars = { ENVIRONMENT = "production" }
 [[env.production.d1_databases]]
 binding = "DB"
 database_name = "art-db"
-# IMPORTANTE: Reemplaza este ID por el ID real de tu base de datos D1 en Cloudflare
-database_id = "PON_AQUI_TU_NUEVO_DATABASE_ID"
+database_id = "d4cbf7ca-26a9-481e-8589-5089c2e24fdd"
