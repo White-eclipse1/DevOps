@@ -22,8 +22,12 @@ const corsHeaders = {
 };
 
 const handler = {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
+
+    // Contexto que se adjunta a cualquier evento de esta request
+    Sentry.setTag("path", url.pathname);
+    Sentry.setTag("method", request.method);
 
     if (request.method === "OPTIONS") {
       return new Response(null, {
@@ -38,8 +42,15 @@ const handler = {
         service: "paaginaludos-api",
         bindings: {
           db: Boolean(env.DB),
+          sentry: Boolean(env.SENTRY_DSN),
         },
       });
+    }
+
+    // Endpoint de prueba: tira un error a proposito para verificar que Sentry recibe eventos.
+    // Borrar despues de validar el setup.
+    if (url.pathname === "/sentry-test") {
+      throw new Error("Sentry test: este error debe aparecer en el dashboard");
     }
 
     if (url.pathname === "/login" && request.method === "POST") {
@@ -64,10 +75,15 @@ const handler = {
 
 export default Sentry.withSentry(
   (env) => ({
-    dsn: "https://1799ce5fc436c48f933aa922460eb447@o4511113714728960.ingest.us.sentry.io/4511113736224768",
+    // DSN viene de wrangler.toml [vars] o secret, no hardcodeado
+    dsn: env.SENTRY_DSN,
+    // Asocia los eventos con la version desplegada (requiere binding CF_VERSION_METADATA)
+    release: env.CF_VERSION_METADATA?.id,
+    environment: env.ENVIRONMENT ?? "production",
     sendDefaultPii: true,
     tracesSampleRate: 1.0,
-    environment: env.ENVIRONMENT ?? "production",
+    // Manda console.log/console.error a Sentry tambien
+    enableLogs: true,
   }),
   handler,
 );
@@ -77,7 +93,8 @@ export async function handleLogin(request, env) {
 
   try {
     payload = await request.json();
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, { tags: { handler: "login", step: "parse_body" } });
     return json({ ok: false, message: "El cuerpo de la solicitud no es JSON valido." }, 400);
   }
 
@@ -87,8 +104,16 @@ export async function handleLogin(request, env) {
   const user = role ? DEMO_USERS[role] : null;
 
   if (!user || user.email !== email || user.password !== password) {
+    Sentry.addBreadcrumb({
+      category: "auth",
+      message: `Login fallido para ${email}`,
+      level: "warning",
+    });
     return json({ ok: false, message: "Correo, password o rol incorrecto." }, 401);
   }
+
+  // Asocia el usuario a los eventos posteriores en esta request
+  Sentry.setUser({ email: user.email, role: user.role });
 
   await recordLogin(env, user, request);
 
@@ -118,22 +143,32 @@ function json(body, status = 200) {
 
 export async function handleGetArtworks(env) {
   if (!env.DB) {
+    Sentry.captureMessage("DB binding faltante en handleGetArtworks", "error");
     return json({ ok: false, message: "Base de datos no configurada." }, 500);
   }
 
-  const { results } = await env.DB.prepare("SELECT * FROM artworks ORDER BY year DESC").all();
-  return json(results);
+  try {
+    // instrumentD1WithSentry hace que cada query aparezca como span en el dashboard
+    const db = Sentry.instrumentD1WithSentry(env.DB);
+    const { results } = await db.prepare("SELECT * FROM artworks ORDER BY year DESC").all();
+    return json(results);
+  } catch (error) {
+    Sentry.captureException(error, { tags: { handler: "get_artworks" } });
+    return json({ ok: false, message: "Error al consultar la base de datos." }, 500);
+  }
 }
 
 export async function handleUpdateArtwork(request, env) {
   if (!env.DB) {
+    Sentry.captureMessage("DB binding faltante en handleUpdateArtwork", "error");
     return json({ ok: false, message: "Base de datos no configurada." }, 500);
   }
 
   let payload;
   try {
     payload = await request.json();
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, { tags: { handler: "update_artwork", step: "parse_body" } });
     return json({ ok: false, message: "El cuerpo de la solicitud no es JSON valido." }, 400);
   }
 
@@ -144,7 +179,8 @@ export async function handleUpdateArtwork(request, env) {
   }
 
   try {
-    await env.DB.prepare(
+    const db = Sentry.instrumentD1WithSentry(env.DB);
+    await db.prepare(
       `UPDATE artworks 
        SET title = ?, type = ?, collection = ?, year = ?, medium = ?, size = ?, price = ?, available = ?, image = ?, description = ?
        WHERE id = ?`
@@ -156,19 +192,24 @@ export async function handleUpdateArtwork(request, env) {
 
     return json({ ok: true, message: "Obra actualizada correctamente." });
   } catch (error) {
+    Sentry.captureException(error, {
+      tags: { handler: "update_artwork", artwork_id: id },
+    });
     return json({ ok: false, message: "Error al actualizar la base de datos." }, 500);
   }
 }
 
 export async function handleCreateArtwork(request, env) {
   if (!env.DB) {
+    Sentry.captureMessage("DB binding faltante en handleCreateArtwork", "error");
     return json({ ok: false, message: "Base de datos no configurada." }, 500);
   }
 
   let payload;
   try {
     payload = await request.json();
-  } catch {
+  } catch (error) {
+    Sentry.captureException(error, { tags: { handler: "create_artwork", step: "parse_body" } });
     return json({ ok: false, message: "El cuerpo de la solicitud no es JSON valido." }, 400);
   }
 
@@ -179,7 +220,8 @@ export async function handleCreateArtwork(request, env) {
   }
 
   try {
-    await env.DB.prepare(
+    const db = Sentry.instrumentD1WithSentry(env.DB);
+    await db.prepare(
       `INSERT INTO artworks (id, title, type, collection, year, medium, size, price, available, image, description)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
@@ -188,6 +230,9 @@ export async function handleCreateArtwork(request, env) {
 
     return json({ ok: true, message: "Obra creada correctamente." }, 201);
   } catch (error) {
+    Sentry.captureException(error, {
+      tags: { handler: "create_artwork", artwork_id: id },
+    });
     return json({ ok: false, message: "Error al insertar en la base de datos." }, 500);
   }
 }
@@ -196,7 +241,8 @@ async function recordLogin(env, user, request) {
   if (!env.DB) return;
 
   try {
-    await env.DB.prepare(
+    const db = Sentry.instrumentD1WithSentry(env.DB);
+    await db.prepare(
       `
         CREATE TABLE IF NOT EXISTS login_events (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -208,7 +254,7 @@ async function recordLogin(env, user, request) {
       `,
     ).run();
 
-    await env.DB.prepare(
+    await db.prepare(
       `
         INSERT INTO login_events (email, role, user_agent, created_at)
         VALUES (?, ?, ?, ?)
@@ -221,7 +267,11 @@ async function recordLogin(env, user, request) {
         new Date().toISOString(),
       )
       .run();
-  } catch {
-    // Login should keep working even if audit persistence is unavailable.
+  } catch (error) {
+    // El login no debe fallar si la auditoria falla, pero si queremos saber que paso
+    Sentry.captureException(error, {
+      level: "warning",
+      tags: { component: "recordLogin" },
+    });
   }
 }
