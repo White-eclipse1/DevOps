@@ -1,7 +1,6 @@
 name = "axiom-tail"
 main = "src/index.js"
 compatibility_date = "2026-01-01"
-account_id = "f7aaab86d474fca548d8d9c1e8695390"
 
 [observability]
 enabled = true
