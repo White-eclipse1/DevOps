@@ -10,6 +10,7 @@ import {
 } from "react";
 import { fetchArtworks, updateArtworkInDb, createArtworkInDb, imageUrl, fallbackImage, faviconImage } from "./artworks";
 import type { Artwork } from "./types";
+//jj
 
 const SETTINGS = {
   email: "artista@correo.com",
