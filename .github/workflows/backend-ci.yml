@@ -31,9 +31,16 @@ jobs:
         working-directory: backend
         run: npm ci
 
-      - name: Pruebas unitarias
+      - name: Pruebas unitarias con cobertura
         working-directory: backend
-        run: npm test
+        run: npm run test:coverage
+
+      - name: Subir reporte de cobertura
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-${{ github.sha }}
+          path: backend/coverage/
+          retention-days: 7
 
       - name: Dry-run bundle (valida compilacion sin deploy)
         working-directory: backend

@@ -7,6 +7,7 @@
 **/backend.hcl
 node_modules/
 dist/
+coverage/
 
 claude.md
 CLAUDE.md
