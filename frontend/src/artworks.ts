@@ -19,7 +19,7 @@ export function imageUrl(source: string): string {
 }
 
 export async function fetchArtworks(): Promise<Artwork[]> {
-  const API_URL = import.meta.env.VITE_API_URL || "https://art-worker-dev.agentemafigue.workers.dev";
+  const API_URL = import.meta.env.VITE_API_URL || "https://art-worker.agentemafigue.workers.dev";
   
   const response = await fetch(`${API_URL}/artworks`);
   if (!response.ok) throw new Error("Error al cargar las obras");
@@ -32,7 +32,7 @@ export async function fetchArtworks(): Promise<Artwork[]> {
 }
 
 export async function updateArtworkInDb(artwork: Artwork): Promise<void> {
-  const API_URL = import.meta.env.VITE_API_URL || "https://art-worker-dev.agentemafigue.workers.dev";
+  const API_URL = import.meta.env.VITE_API_URL || "https://art-worker.agentemafigue.workers.dev";
 
   const response = await fetch(`${API_URL}/artworks`, {
     method: "PUT",
@@ -44,7 +44,7 @@ export async function updateArtworkInDb(artwork: Artwork): Promise<void> {
 }
 
 export async function createArtworkInDb(artwork: Artwork): Promise<void> {
-  const API_URL = import.meta.env.VITE_API_URL || "https://art-worker-dev.agentemafigue.workers.dev";
+  const API_URL = import.meta.env.VITE_API_URL || "https://art-worker.agentemafigue.workers.dev";
 
   const response = await fetch(`${API_URL}/artworks`, {
     method: "POST",

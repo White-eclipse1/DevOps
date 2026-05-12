@@ -51,6 +51,8 @@ const handler = {
         response = await handleUpdateArtwork(request, env);
       } else if (url.pathname === "/artworks" && request.method === "POST") {
         response = await handleCreateArtwork(request, env);
+      } else if (url.pathname === "/monitor" && request.method === "POST") {
+        response = await handleMonitorEvent(request, env, ctx);
       } else {
         response = new Response("Not found", { status: 404 });
       }
@@ -211,6 +213,34 @@ export async function handleCreateArtwork(request, env) {
   }
 }
 
+export async function handleMonitorEvent(request, env, ctx) {
+  let payload;
+
+  try {
+    payload = await request.json();
+  } catch {
+    return json({ ok: false, message: "El cuerpo de la solicitud no es JSON valido." }, 400);
+  }
+
+  trackBackendEvent(env, ctx, {
+    service: "galeria-viva-frontend",
+    runtime: "browser-via-worker",
+    event: typeof payload.event === "string" ? payload.event : "client_event",
+    level: normalizeLevel(payload.level),
+    path: typeof payload.path === "string" ? payload.path : "",
+    route: typeof payload.route === "string" ? payload.route : "",
+    role: typeof payload.role === "string" ? payload.role : "",
+    message: typeof payload.message === "string" ? payload.message : "",
+    metadata: sanitizeClientMetadata(payload.metadata),
+    user_agent: request.headers.get("user-agent") ?? "",
+    referer: request.headers.get("referer") ?? "",
+    colo: request.cf?.colo ?? "",
+    country: request.cf?.country ?? "",
+  });
+
+  return json({ ok: true }, 202);
+}
+
 async function recordLogin(env, user, request) {
   if (!env.DB) return;
 
@@ -243,4 +273,18 @@ async function recordLogin(env, user, request) {
   } catch {
     // Login should keep working even if audit persistence is unavailable.
   }
+}
+
+function normalizeLevel(level) {
+  return level === "debug" || level === "info" || level === "warn" || level === "error" ? level : "info";
+}
+
+function sanitizeClientMetadata(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !["password", "token", "email"].includes(key.toLowerCase()))
+      .map(([key, item]) => [key, typeof item === "string" ? item.slice(0, 500) : item]),
+  );
 }

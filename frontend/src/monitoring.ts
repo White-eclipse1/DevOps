@@ -10,6 +10,7 @@ interface ClientEvent {
 }
 
 let initialized = false;
+const DEFAULT_API_URL = "https://art-worker.agentemafigue.workers.dev";
 
 export function initFrontendMonitoring() {
   if (initialized || typeof window === "undefined") return;
@@ -57,12 +58,14 @@ export function trackClientEvent(event: string, details: Omit<ClientEvent, "even
 
   const body = JSON.stringify(payload);
 
+  const endpoint = getMonitorEndpoint();
+
   if (navigator.sendBeacon) {
     const blob = new Blob([body], { type: "application/json" });
-    if (navigator.sendBeacon("/api/monitor", blob)) return;
+    if (navigator.sendBeacon(endpoint, blob)) return;
   }
 
-  fetch("/api/monitor", {
+  fetch(endpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body,
@@ -77,4 +80,9 @@ function getErrorMessage(error: unknown) {
 
 function isLocalDev() {
   return window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+}
+
+function getMonitorEndpoint() {
+  const apiUrl = import.meta.env.VITE_API_URL || DEFAULT_API_URL;
+  return `${apiUrl.replace(/\/$/, "")}/monitor`;
 }

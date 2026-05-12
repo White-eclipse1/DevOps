@@ -117,3 +117,19 @@ describe("Unknown routes", () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe("POST /monitor", () => {
+  it("accepts frontend monitoring events", async () => {
+    const res = await worker.fetch(
+      makeRequest("POST", "/monitor", {
+        event: "debug_probe",
+        level: "info",
+        path: "/customer",
+      }),
+      mockEnv,
+    );
+    const json = await res.json();
+    expect(res.status).toBe(202);
+    expect(json.ok).toBe(true);
+  });
+});
