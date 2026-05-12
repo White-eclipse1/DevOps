@@ -1075,6 +1075,10 @@ function ArtistPage({ artworks }: { artworks: Artwork[] }) {
       available: true,
       image: fallbackImage, // Imagen temporal
       year: new Date().getFullYear(),
+      medium: "",
+      size: "",
+      price: null,
+      description: "",
     };
     setItems((currentItems) => [newArtwork, ...currentItems]);
     setSelectedId(newId);
