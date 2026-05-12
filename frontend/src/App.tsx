@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { fetchArtworks, updateArtworkInDb, createArtworkInDb, imageUrl, fallbackImage, faviconImage } from "./artworks";
+import { trackClientEvent } from "./monitoring";
 import type { Artwork } from "./types";
 
 const SETTINGS = {
@@ -45,14 +46,33 @@ function App() {
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
+    const startedAt = Date.now();
+
     fetchArtworks()
       .then((data) => {
         setGlobalArtworks(data);
         setLoadingData(false);
+        trackClientEvent("artworks_loaded", {
+          route,
+          role: session?.user.role,
+          metadata: {
+            count: data.length,
+            duration_ms: Date.now() - startedAt,
+          },
+        });
       })
       .catch((err) => {
         console.error("Error cargando obras:", err);
         setLoadingData(false);
+        trackClientEvent("artworks_load_failed", {
+          level: "error",
+          route,
+          role: session?.user.role,
+          message: err instanceof Error ? err.message : "Error cargando obras",
+          metadata: {
+            duration_ms: Date.now() - startedAt,
+          },
+        });
       });
   }, []);
 
@@ -103,7 +123,17 @@ function App() {
 
   return (
     <>
-      <Header activeRoute={effectiveRoute} session={session} onLogout={() => setSession(null)} />
+      <Header
+        activeRoute={effectiveRoute}
+        session={session}
+        onLogout={() => {
+          trackClientEvent("logout", {
+            route: effectiveRoute,
+            role: session.user.role,
+          });
+          setSession(null);
+        }}
+      />
       {loadingData ? (
         <div style={{ textAlign: "center", padding: "120px 20px" }}>Cargando catálogo de obras...</div>
       ) : effectiveRoute === "artist" ? (
@@ -153,6 +183,12 @@ function LoginPage({ onLogin }: { onLogin: (session: UserSession) => void }) {
 
     try {
       const nextSession = await login(role, email, password);
+      trackClientEvent("login_success", {
+        role: nextSession.user.role,
+        metadata: {
+          selected_role: role,
+        },
+      });
       onLogin(nextSession);
       window.history.replaceState(
         {},
@@ -160,6 +196,11 @@ function LoginPage({ onLogin }: { onLogin: (session: UserSession) => void }) {
         nextSession.user.role === "artist" ? "/artist" : "/customer",
       );
     } catch (loginError) {
+      trackClientEvent("login_failed", {
+        level: "warn",
+        role,
+        message: loginError instanceof Error ? loginError.message : "No se pudo iniciar sesion.",
+      });
       setError(loginError instanceof Error ? loginError.message : "No se pudo iniciar sesion.");
     } finally {
       setLoading(false);

@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/cloudflare";
+import { buildRequestEvent, trackBackendEvent } from "./axiom.js";
 
 const DEMO_USERS = {
   artist: {
@@ -22,43 +23,49 @@ const corsHeaders = {
 };
 
 const handler = {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
+    const startedAt = Date.now();
     const url = new URL(request.url);
+    let response;
 
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders,
+    try {
+      if (request.method === "OPTIONS") {
+        response = new Response(null, {
+          status: 204,
+          headers: corsHeaders,
+        });
+      } else if (url.pathname === "/" || url.pathname === "/health") {
+        response = Response.json({
+          ok: true,
+          service: "paaginaludos-api",
+          bindings: {
+            db: Boolean(env.DB),
+            axiom: Boolean(env.AXIOM_TOKEN_BACKEND && (env.AXIOM_INGEST_URL || env.VITE_AXIOM_INGEST_URL)),
+          },
+        });
+      } else if (url.pathname === "/login" && request.method === "POST") {
+        response = await handleLogin(request, env, ctx);
+      } else if (url.pathname === "/artworks" && request.method === "GET") {
+        response = await handleGetArtworks(env);
+      } else if (url.pathname === "/artworks" && request.method === "PUT") {
+        response = await handleUpdateArtwork(request, env);
+      } else if (url.pathname === "/artworks" && request.method === "POST") {
+        response = await handleCreateArtwork(request, env);
+      } else {
+        response = new Response("Not found", { status: 404 });
+      }
+    } catch (error) {
+      response = json({ ok: false, message: "Error interno del servidor." }, 500);
+      trackBackendEvent(env, ctx, {
+        event: "unhandled_error",
+        level: "error",
+        path: url.pathname,
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     }
 
-    if (url.pathname === "/" || url.pathname === "/health") {
-      return Response.json({
-        ok: true,
-        service: "paaginaludos-api",
-        bindings: {
-          db: Boolean(env.DB),
-        },
-      });
-    }
-
-    if (url.pathname === "/login" && request.method === "POST") {
-      return handleLogin(request, env);
-    }
-
-    if (url.pathname === "/artworks" && request.method === "GET") {
-      return handleGetArtworks(env);
-    }
-
-    if (url.pathname === "/artworks" && request.method === "PUT") {
-      return handleUpdateArtwork(request, env);
-    }
-
-    if (url.pathname === "/artworks" && request.method === "POST") {
-      return handleCreateArtwork(request, env);
-    }
-
-    return new Response("Not found", { status: 404 });
+    trackBackendEvent(env, ctx, buildRequestEvent(request, response, startedAt));
+    return response;
   },
 };
 
@@ -72,7 +79,7 @@ export default Sentry.withSentry(
   handler,
 );
 
-export async function handleLogin(request, env) {
+export async function handleLogin(request, env, ctx) {
   let payload;
 
   try {
@@ -87,10 +94,22 @@ export async function handleLogin(request, env) {
   const user = role ? DEMO_USERS[role] : null;
 
   if (!user || user.email !== email || user.password !== password) {
+    trackBackendEvent(env, ctx, {
+      event: "login_failed",
+      level: "warn",
+      role: role ?? "invalid",
+      email_domain: email.includes("@") ? email.split("@").pop() : "",
+    });
     return json({ ok: false, message: "Correo, password o rol incorrecto." }, 401);
   }
 
   await recordLogin(env, user, request);
+  trackBackendEvent(env, ctx, {
+    event: "login_success",
+    level: "info",
+    role: user.role,
+    email_domain: user.email.split("@").pop(),
+  });
 
   return json({
     ok: true,

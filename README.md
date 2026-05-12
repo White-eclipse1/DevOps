@@ -120,6 +120,29 @@ Cloudflare Pages debe usar:
 - Production branch: `main`
 - Root directory: `frontend`
 
+## Monitoreo Con Axiom
+
+El proyecto envia eventos estructurados a Axiom desde dos superficies:
+
+- Backend Worker: registra requests, errores no controlados y login exitoso/fallido.
+- Frontend: registra carga de app, carga de catalogo, login/logout y errores del navegador mediante `POST /api/monitor`.
+
+Variables necesarias:
+
+```text
+AXIOM_TOKEN_BACKEND
+AXIOM_TOKEN_FRONTEND
+VITE_AXIOM_INGEST_URL
+```
+
+`VITE_AXIOM_INGEST_URL` debe apuntar al endpoint de ingestion del dataset, por ejemplo:
+
+```text
+https://api.axiom.co/v1/datasets/NOMBRE_DEL_DATASET/ingest
+```
+
+Los secrets de GitHub se usan para configurar el Worker durante los deploys. Para Cloudflare Pages, configura tambien `AXIOM_TOKEN_FRONTEND` y `VITE_AXIOM_INGEST_URL` como variables/secrets del proyecto Pages, porque el endpoint `frontend/functions/api/monitor.js` corre dentro de Cloudflare Pages Functions.
+
 ## Infraestructura
 
 La infraestructura vive en `infra/`.

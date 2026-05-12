@@ -49,6 +49,17 @@ jobs:
         working-directory: backend
         run: npm ci
 
+      - name: Configurar Axiom en Production
+        working-directory: backend
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          AXIOM_TOKEN_BACKEND: ${{ secrets.AXIOM_TOKEN_BACKEND }}
+          VITE_AXIOM_INGEST_URL: ${{ secrets.VITE_AXIOM_INGEST_URL }}
+        run: |
+          printf "%s" "$AXIOM_TOKEN_BACKEND" | npx wrangler secret put AXIOM_TOKEN_BACKEND --env production
+          printf "%s" "$VITE_AXIOM_INGEST_URL" | npx wrangler secret put VITE_AXIOM_INGEST_URL --env production
+
       - name: Deploy a Production
         working-directory: backend
         env:
