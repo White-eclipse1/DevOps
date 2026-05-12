@@ -1,7 +1,7 @@
 name = "art-worker"
 main = "src/worker.js"
 compatibility_date = "2026-01-01"
-account_id = "f7aaab86d474fca548d8d9c1e8695390"
+
 
 # --- Ambiente Dev ---
 [env.dev]
