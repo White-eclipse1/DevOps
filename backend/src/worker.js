@@ -1,5 +1,5 @@
 import * as Sentry from "@sentry/cloudflare";
-import { buildRequestEvent, trackBackendEvent } from "./axiom.js";
+import { buildRequestEvent, sendAxiomEventDetailed, trackBackendEvent } from "./axiom.js";
 
 const DEMO_USERS = {
   artist: {
@@ -214,6 +214,7 @@ export async function handleCreateArtwork(request, env) {
 }
 
 export async function handleMonitorEvent(request, env, ctx) {
+  const url = new URL(request.url);
   let payload;
 
   try {
@@ -222,7 +223,7 @@ export async function handleMonitorEvent(request, env, ctx) {
     return json({ ok: false, message: "El cuerpo de la solicitud no es JSON valido." }, 400);
   }
 
-  trackBackendEvent(env, ctx, {
+  const event = {
     service: "galeria-viva-frontend",
     runtime: "browser-via-worker",
     event: typeof payload.event === "string" ? payload.event : "client_event",
@@ -236,7 +237,20 @@ export async function handleMonitorEvent(request, env, ctx) {
     referer: request.headers.get("referer") ?? "",
     colo: request.cf?.colo ?? "",
     country: request.cf?.country ?? "",
-  });
+  };
+
+  if (url.searchParams.get("debug") === "1") {
+    const result = await sendAxiomEventDetailed(env, event);
+    return json(
+      {
+        ok: result.ok,
+        axiom: result,
+      },
+      result.ok ? 202 : 502,
+    );
+  }
+
+  trackBackendEvent(env, ctx, event);
 
   return json({ ok: true }, 202);
 }

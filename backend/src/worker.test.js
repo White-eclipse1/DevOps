@@ -132,4 +132,19 @@ describe("POST /monitor", () => {
     expect(res.status).toBe(202);
     expect(json.ok).toBe(true);
   });
+
+  it("returns Axiom diagnostics in debug mode", async () => {
+    const res = await worker.fetch(
+      makeRequest("POST", "/monitor?debug=1", {
+        event: "debug_probe",
+        level: "info",
+        path: "/customer",
+      }),
+      mockEnv,
+    );
+    const json = await res.json();
+    expect(res.status).toBe(502);
+    expect(json.ok).toBe(false);
+    expect(json.axiom.configured).toBe(false);
+  });
 });

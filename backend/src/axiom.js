@@ -12,10 +12,23 @@ export function trackBackendEvent(env, ctx, event) {
 }
 
 export async function sendAxiomEvent(env, event) {
+  const result = await sendAxiomEventDetailed(env, event);
+  return result.ok;
+}
+
+export async function sendAxiomEventDetailed(env, event) {
   const url = getAxiomIngestUrl(env);
   const token = env?.AXIOM_TOKEN_BACKEND;
 
-  if (!url || !token) return false;
+  if (!url || !token) {
+    return {
+      ok: false,
+      configured: false,
+      status: 0,
+      endpoint: describeEndpoint(url),
+      message: !url ? "Missing Axiom ingest URL" : "Missing Axiom token",
+    };
+  }
 
   try {
     const response = await fetch(url, {
@@ -36,9 +49,23 @@ export async function sendAxiomEvent(env, event) {
       ]),
     });
 
-    return response.ok;
+    const text = await response.text();
+
+    return {
+      ok: response.ok,
+      configured: true,
+      status: response.status,
+      endpoint: describeEndpoint(url),
+      message: response.ok ? "Axiom accepted the event" : text.slice(0, 500),
+    };
   } catch {
-    return false;
+    return {
+      ok: false,
+      configured: true,
+      status: 0,
+      endpoint: describeEndpoint(url),
+      message: "Request to Axiom failed",
+    };
   }
 }
 
@@ -62,6 +89,23 @@ export function buildRequestEvent(request, response, startedAt, extra = {}) {
 
 function getAxiomIngestUrl(env) {
   return env?.AXIOM_INGEST_URL || env?.VITE_AXIOM_INGEST_URL || "";
+}
+
+function describeEndpoint(url) {
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url);
+    return {
+      host: parsed.host,
+      path: parsed.pathname,
+    };
+  } catch {
+    return {
+      host: "invalid-url",
+      path: "",
+    };
+  }
 }
 
 function sanitize(value) {
