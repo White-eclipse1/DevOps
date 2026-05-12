@@ -7,7 +7,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "deploy:dev": "wrangler deploy --env dev",
-    "deploy:prod": "wrangler deploy --env production"
+    "deploy:prod": "wrangler deploy --env production",
+    "generate-seed": "node scripts/generate-seed.js"
   },
   "devDependencies": {
     "vitest": "^2.1.0",

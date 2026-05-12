@@ -17,7 +17,7 @@ const DEMO_USERS = {
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -44,6 +44,14 @@ const handler = {
 
     if (url.pathname === "/login" && request.method === "POST") {
       return handleLogin(request, env);
+    }
+
+    if (url.pathname === "/artworks" && request.method === "GET") {
+      return handleGetArtworks(env);
+    }
+
+    if (url.pathname === "/artworks" && request.method === "PUT") {
+      return handleUpdateArtwork(request, env);
     }
 
     return new Response("Not found", { status: 404 });
@@ -102,6 +110,50 @@ function json(body, status = 200) {
     status,
     headers: corsHeaders,
   });
+}
+
+export async function handleGetArtworks(env) {
+  if (!env.DB) {
+    return json({ ok: false, message: "Base de datos no configurada." }, 500);
+  }
+
+  const { results } = await env.DB.prepare("SELECT * FROM artworks ORDER BY year DESC").all();
+  return json(results);
+}
+
+export async function handleUpdateArtwork(request, env) {
+  if (!env.DB) {
+    return json({ ok: false, message: "Base de datos no configurada." }, 500);
+  }
+
+  let payload;
+  try {
+    payload = await request.json();
+  } catch {
+    return json({ ok: false, message: "El cuerpo de la solicitud no es JSON valido." }, 400);
+  }
+
+  const { id, title, type, collection, year, medium, size, price, available, image, description } = payload;
+
+  if (!id) {
+    return json({ ok: false, message: "El ID de la obra es requerido." }, 400);
+  }
+
+  try {
+    await env.DB.prepare(
+      `UPDATE artworks 
+       SET title = ?, type = ?, collection = ?, year = ?, medium = ?, size = ?, price = ?, available = ?, image = ?, description = ?
+       WHERE id = ?`
+    )
+      .bind(
+        title ?? null, type ?? null, collection ?? null, year ?? null, medium ?? null, size ?? null, price ?? null, available ? 1 : 0, image ?? null, description ?? null, id
+      )
+      .run();
+
+    return json({ ok: true, message: "Obra actualizada correctamente." });
+  } catch (error) {
+    return json({ ok: false, message: "Error al actualizar la base de datos." }, 500);
+  }
 }
 
 async function recordLogin(env, user, request) {
