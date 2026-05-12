@@ -489,25 +489,28 @@ function HomePage({ artworks }: { artworks: Artwork[] }) {
       <section className="hero">
         <div className="container hero__grid">
           <div className="hero__text">
-            <h1>Galería Viva para arte emergente</h1>
+            <div className="hub-kicker">Hub creativo para artistas independientes</div>
+            <h1>Galería Viva conecta obra, artista y coleccionista</h1>
             <p className="lead">
-              Explora obras originales, colecciones y fichas de artista en una experiencia
-              visual creada para exhibir talento emergente desde Cloudflare Pages.
+              Un espacio digital para descubrir colecciones, abrir fichas de obra y
+              acompañar el proceso de artistas emergentes desde un mismo hub visual.
             </p>
 
             <div className="cta">
               <a className="btn" href="/gallery?type=pintura">
-                Explorar pinturas
+                Explorar el hub
               </a>
               <a className="btn btn--ghost" href="/gallery?type=ceramica">
-                Ver cerámicas
+                Ver colecciones
               </a>
             </div>
 
             <div className="meta">
-              <span>Zapopan, México</span>
+              <span>Portafolio vivo</span>
               <span>•</span>
-              <span>Comisiones abiertas</span>
+              <span>Inventario curado</span>
+              <span>•</span>
+              <span>Comisiones y contacto directo</span>
             </div>
           </div>
 
@@ -520,38 +523,52 @@ function HomePage({ artworks }: { artworks: Artwork[] }) {
       <section className="stats-bar">
         <div className="container">
           <div className="stats-grid">
-            <Stat number="50+" label="Obras Creadas" />
-            <Stat number="2" label="Disciplinas" />
-            <Stat number="100%" label="Piezas Únicas" />
-            <Stat number="MX" label="Hecho en México" />
+            <Stat number="27" label="Obras catalogadas" />
+            <Stat number="2" label="Disciplinas activas" />
+            <Stat number="1" label="Panel editorial" />
+            <Stat number="MX" label="Hub en México" />
           </div>
+        </div>
+      </section>
+
+      <section className="hub-strip" aria-label="Herramientas del hub de artistas">
+        <div className="container hub-strip__grid">
+          <HubFeature title="Portafolio público">
+            Colecciones navegables, fichas visuales y filtros para que cada pieza tenga contexto.
+          </HubFeature>
+          <HubFeature title="Panel de artista">
+            Inventario, disponibilidad, precios y edición de fichas desde una vista privada.
+          </HubFeature>
+          <HubFeature title="Contacto comercial">
+            Rutas claras hacia Instagram, correo y comisiones para convertir interés en conversación.
+          </HubFeature>
         </div>
       </section>
 
       <section id="about" className="section">
         <div className="container about-rework">
           <div className="about-rework__intro">
-            <div className="section-badge">Perfil de artista</div>
-            <h2>Lulú Cárdenas</h2>
+            <div className="section-badge">Artista destacada</div>
+            <h2>Lulú Cárdenas dentro del hub</h2>
             <p>
-              Soy una artista mexicana. Expreso mis sentidos, emociones y sentimientos por
-              medio del arte. En cada pieza comparto un pedacito de mi alma.
+              Galería Viva organiza su universo visual en un espacio pensado para presentar
+              obra, proceso, disponibilidad y canales de contacto sin perder sensibilidad.
             </p>
             <p>
-              Transformo la arcilla con mis manos y dejo en ella un poco de mi esencia para
-              convertirla en objetos útiles o adornos llenos de vida e historia propia.
+              Pintura, cerámica y comisiones conviven en una experiencia que funciona como
+              portafolio, catálogo y punto de encuentro con coleccionistas.
             </p>
           </div>
 
           <div className="about-rework__grid" aria-label="Valores de la obra">
-            <InfoCard title="Obra original">
-              Cada pieza es única y creada a mano, sin reproducciones.
+            <InfoCard title="Ficha clara">
+              Cada obra muestra técnica, colección, disponibilidad y precio cuando existe.
             </InfoCard>
-            <InfoCard title="Técnica mixta">
-              Pintura y cerámica se combinan con un proceso sensible y personal.
+            <InfoCard title="Colecciones vivas">
+              Las piezas se agrupan por series para entender mejor el lenguaje de la artista.
             </InfoCard>
-            <InfoCard title="Comisiones abiertas">
-              Desarrollo piezas personalizadas según tu espacio e intención.
+            <InfoCard title="Gestión simple">
+              El panel privado permite revisar inventario y preparar cambios editoriales.
             </InfoCard>
           </div>
 
@@ -1794,6 +1811,16 @@ function Stat({ number, label }: { number: string; label: string }) {
       <div className="stat__number">{number}</div>
       <div className="stat__label">{label}</div>
     </div>
+  );
+}
+
+function HubFeature({ title, children }: { title: string; children: string }) {
+  return (
+    <article className="hub-feature">
+      <span className="hub-feature__mark" aria-hidden="true" />
+      <h3>{title}</h3>
+      <p>{children}</p>
+    </article>
   );
 }
 

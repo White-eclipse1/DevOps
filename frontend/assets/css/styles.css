@@ -304,6 +304,20 @@ body.nav-open{
 /* Hero */
 .hero{padding:80px 0 60px}
 .hero__grid{display:grid;grid-template-columns: 1.1fr .9fr;gap:40px;align-items:center}
+.hub-kicker{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  margin-bottom:16px;
+  border-radius:999px;
+  background:rgba(122,10,63,.08);
+  color:var(--primary-dark);
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+}
 .hero__text h1{
   font-size:52px;
   line-height:1.1;
@@ -326,6 +340,48 @@ body.nav-open{
   color:var(--muted);
   font-size:15px;
   font-weight:500;
+}
+
+.hub-strip{
+  padding:28px 0 64px;
+  background:linear-gradient(180deg, rgba(255,255,255,0), rgba(255,247,241,.88));
+}
+
+.hub-strip__grid{
+  display:grid;
+  grid-template-columns:repeat(3, minmax(0, 1fr));
+  gap:18px;
+}
+
+.hub-feature{
+  position:relative;
+  min-height:178px;
+  padding:24px;
+  border:1px solid rgba(122,10,63,.12);
+  border-radius:18px;
+  background:rgba(255,255,255,.92);
+  box-shadow:var(--shadow);
+}
+
+.hub-feature__mark{
+  display:block;
+  width:34px;
+  height:5px;
+  margin-bottom:18px;
+  border-radius:999px;
+  background:linear-gradient(90deg, var(--primary), var(--accent));
+}
+
+.hub-feature h3{
+  margin:0 0 10px;
+  font-size:19px;
+}
+
+.hub-feature p{
+  margin:0;
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.65;
 }
 
 .hero__media{display:grid;gap:18px}
@@ -1801,6 +1857,9 @@ textarea{
   .hero-carousel__slide img{
     min-height:440px;
   }
+  .hub-strip__grid{
+    grid-template-columns:1fr;
+  }
   .stats-grid,.process-grid{grid-template-columns: repeat(2, 1fr)}
   .newsletter-box{grid-template-columns:1fr;padding:36px}
   
@@ -1912,6 +1971,17 @@ textarea{
   .hero{padding:60px 0 40px}
   .grid,.testimonials-grid,.stats-grid,.process-grid{grid-template-columns: 1fr}
   .hero__text h1{font-size:34px}
+  .hub-kicker{
+    font-size:11px;
+    letter-spacing:.08em;
+  }
+  .hub-strip{
+    padding:20px 0 48px;
+  }
+  .hub-feature{
+    min-height:auto;
+    padding:20px;
+  }
   .lead{font-size:17px}
   .about-rework__grid{grid-template-columns:1fr}
   .featured-head__note{
