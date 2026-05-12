@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/cloudflare";
+
 const DEMO_USERS = {
   artist: {
     email: "artista@galeriaviva.local",
@@ -19,7 +21,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
-export default {
+const handler = {
   async fetch(request, env) {
     const url = new URL(request.url);
 
@@ -47,6 +49,16 @@ export default {
     return new Response("Not found", { status: 404 });
   },
 };
+
+export default Sentry.withSentry(
+  (env) => ({
+    dsn: "https://1799ce5fc436c48f933aa922460eb447@o4511113714728960.ingest.us.sentry.io/4511113736224768",
+    sendDefaultPii: true,
+    tracesSampleRate: 1.0,
+    environment: env.ENVIRONMENT ?? "production",
+  }),
+  handler,
+);
 
 export async function handleLogin(request, env) {
   let payload;
