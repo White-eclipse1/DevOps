@@ -1,0 +1,17 @@
+name = "axiom-tail"
+main = "src/index.js"
+compatibility_date = "2026-01-01"
+account_id = "f7aaab86d474fca548d8d9c1e8695390"
+
+[observability]
+enabled = true
+
+# Secrets: echo "$TOKEN" | npx wrangler secret put AXIOM_TOKEN --env <dev|production>
+
+[env.dev]
+name = "axiom-tail-dev"
+vars = { AXIOM_DATASET = "galeria-backend-dev" }
+
+[env.production]
+name = "axiom-tail"
+vars = { AXIOM_DATASET = "galeria-backend" }

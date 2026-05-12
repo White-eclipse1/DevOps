@@ -42,4 +42,7 @@ jobs:
         run: npm run validate && npm test
 
       - name: Build de produccion (Vite)
+        env:
+          VITE_AXIOM_INGEST_URL: ${{ secrets.VITE_AXIOM_INGEST_URL }}
+          VITE_AXIOM_TOKEN: ${{ secrets.AXIOM_TOKEN_FRONTEND }}
         run: npm run build

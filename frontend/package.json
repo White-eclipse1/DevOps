@@ -13,7 +13,6 @@
     "smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
-    "@sentry/react": "^10.52.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
   },

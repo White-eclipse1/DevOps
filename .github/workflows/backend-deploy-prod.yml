@@ -24,7 +24,9 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: |
+            backend/package-lock.json
+            backend/axiom-tail/package-lock.json
       - run: npm ci
         working-directory: backend
       - run: npm test
@@ -46,11 +48,32 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: |
+            backend/package-lock.json
+            backend/axiom-tail/package-lock.json
 
-      - name: Instalar dependencias
+      - name: Instalar dependencias (Worker principal)
         working-directory: backend
         run: npm ci
+
+      - name: Instalar dependencias (axiom-tail)
+        working-directory: backend/axiom-tail
+        run: npm ci
+
+      - name: Secreto Axiom para tail worker
+        working-directory: backend/axiom-tail
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TOKEN: ${{ secrets.AXIOM_TOKEN_BACKEND }}
+        run: printf '%s' "$TOKEN" | npx wrangler secret put AXIOM_TOKEN --env production
+
+      - name: Deploy axiom-tail (production)
+        working-directory: backend/axiom-tail
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx wrangler deploy --env production
 
       - name: Deploy a Production
         working-directory: backend

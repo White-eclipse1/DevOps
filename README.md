@@ -56,6 +56,7 @@ Segun el rol autenticado, React muestra automaticamente la vista cliente o la vi
 - Cloudflare D1
 - Cloudflare R2 planeado para almacenamiento de imagenes
 - Terraform
+- Axiom (logs y errores desde el navegador y desde Workers vía Tail Consumer)
 
 ## Estructura
 
@@ -71,12 +72,19 @@ Segun el rol autenticado, React muestra automaticamente la vista cliente o la vi
 │   ├── scripts/
 │   ├── src/
 │   │   ├── App.tsx
+│   │   ├── lib/artwork-utils.ts
 │   │   ├── artworks.ts
+│   │   ├── ErrorBoundary.tsx
+│   │   ├── instrument.ts
 │   │   ├── main.tsx
 │   │   └── types.ts
 │   ├── package.json
 │   └── vite.config.ts
 ├── backend/
+│   ├── axiom-tail/
+│   │   ├── src/index.js      # Tail consumer → Axiom ingest
+│   │   ├── package.json
+│   │   └── wrangler.toml
 │   ├── src/worker.js
 │   ├── src/worker.test.js
 │   ├── package.json
@@ -119,6 +127,42 @@ Cloudflare Pages debe usar:
 - Build output directory: `dist`
 - Production branch: `main`
 - Root directory: `frontend`
+
+## Observabilidad (Axiom)
+
+Se reemplazó Sentry por **Axiom** con dos datasets sugeridos:
+
+| Dataset | Origen | Contenido |
+|---------|--------|-----------|
+| `galeria-frontend` | `frontend/src/instrument.ts` | Errores no capturados, `ErrorBoundary`, eventos de log (ingest HTTP desde el navegador) |
+| `galeria-backend-dev` / `galeria-backend` | Worker `art-worker` + Tail `axiom-tail` | Resúmenes de invocación, `console.log`/`console.error` JSON y excepciones del runtime |
+
+**Backend (Cloudflare Workers)**
+
+1. Crea en Axiom los datasets `galeria-backend-dev` y `galeria-backend` (o ajusta `AXIOM_DATASET` en `backend/axiom-tail/wrangler.toml`).
+2. Genera un token con permiso de **ingest** para el tail worker (`AXIOM_TOKEN` como secret en Wrangler: `wrangler secret put AXIOM_TOKEN --env dev` desde `backend/axiom-tail`).
+3. Deploy del tail consumer (`axiom-tail-dev` / `axiom-tail`) y luego del producer (`art-worker-dev` / `art-worker`). Scripts en raíz del backend: `npm run deploy:tail:dev`, `npm run deploy:tail:prod`.
+4. El producer emite líneas JSON vía `logEvent()` ([backend/src/worker.js](backend/src/worker.js)) para que Tail las indexe junto con `exceptions` automáticas.
+5. **Nota Cloudflare**: los [Tail Workers](https://developers.cloudflare.com/workers/observability/tail-workers/) requieren plan **Workers Paid** (no aplican cuentas solo free).
+
+**Frontend (Pages / Vite)**
+
+Variables de build (solo si quieres telemetría en el navegador):
+
+```text
+VITE_AXIOM_INGEST_URL=https://api.axiom.co/v1/datasets/galeria-frontend/ingest
+VITE_AXIOM_TOKEN=<token solo ingest para el dataset galeria-frontend>
+```
+
+En GitHub Actions el workflow [frontend-deploy-dev.yml](.github/workflows/frontend-deploy-dev.yml) espera secrets `VITE_AXIOM_INGEST_URL` y `AXIOM_TOKEN_FRONTEND`. El cliente es best-effort: si las variables están vacías, no se envía nada.
+
+**CORS**: el ingest de Axiom debe aceptar el origen de tu Pages/preview; si el navegador bloquea `fetch`, considera un proxy en Worker o ingest solo desde servidor.
+
+**GitHub Actions (backend)**
+
+Secret `AXIOM_TOKEN_BACKEND`: token de ingest con acceso al dataset configurado para `axiom-tail`. El workflow actualiza `AXIOM_TOKEN` en cada deploy antes de publicar los Workers.
+
+Consulta dashboards en [app.axiom.co](https://app.axiom.co).
 
 ## Infraestructura
 
