@@ -54,6 +54,10 @@ const handler = {
       return handleUpdateArtwork(request, env);
     }
 
+    if (url.pathname === "/artworks" && request.method === "POST") {
+      return handleCreateArtwork(request, env);
+    }
+
     return new Response("Not found", { status: 404 });
   },
 };
@@ -153,6 +157,38 @@ export async function handleUpdateArtwork(request, env) {
     return json({ ok: true, message: "Obra actualizada correctamente." });
   } catch (error) {
     return json({ ok: false, message: "Error al actualizar la base de datos." }, 500);
+  }
+}
+
+export async function handleCreateArtwork(request, env) {
+  if (!env.DB) {
+    return json({ ok: false, message: "Base de datos no configurada." }, 500);
+  }
+
+  let payload;
+  try {
+    payload = await request.json();
+  } catch {
+    return json({ ok: false, message: "El cuerpo de la solicitud no es JSON valido." }, 400);
+  }
+
+  const { id, title, type, collection, year, medium, size, price, available, image, description } = payload;
+
+  if (!id || !title) {
+    return json({ ok: false, message: "El ID y título de la obra son requeridos." }, 400);
+  }
+
+  try {
+    await env.DB.prepare(
+      `INSERT INTO artworks (id, title, type, collection, year, medium, size, price, available, image, description)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+      .bind(id, title, type ?? "pintura", collection ?? null, year ?? null, medium ?? null, size ?? null, price ?? null, available ? 1 : 0, image ?? null, description ?? null)
+      .run();
+
+    return json({ ok: true, message: "Obra creada correctamente." }, 201);
+  } catch (error) {
+    return json({ ok: false, message: "Error al insertar en la base de datos." }, 500);
   }
 }
 

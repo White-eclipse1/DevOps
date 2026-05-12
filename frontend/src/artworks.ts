@@ -43,5 +43,17 @@ export async function updateArtworkInDb(artwork: Artwork): Promise<void> {
   if (!response.ok) throw new Error("Error al guardar la obra");
 }
 
+export async function createArtworkInDb(artwork: Artwork): Promise<void> {
+  const API_URL = import.meta.env.VITE_API_URL || "https://art-worker-dev.agentemafigue.workers.dev";
+
+  const response = await fetch(`${API_URL}/artworks`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(artwork),
+  });
+
+  if (!response.ok) throw new Error("Error al crear la obra");
+}
+
 export const fallbackImage = imageUrl("assets/img/caras.jpeg");
 export const faviconImage = imageUrl("assets/img/arte de lulu1.PNG");

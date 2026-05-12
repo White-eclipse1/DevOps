@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { fetchArtworks, updateArtworkInDb, imageUrl, fallbackImage, faviconImage } from "./artworks";
+import { fetchArtworks, updateArtworkInDb, createArtworkInDb, imageUrl, fallbackImage, faviconImage } from "./artworks";
 import type { Artwork } from "./types";
 
 const SETTINGS = {
@@ -1046,14 +1046,39 @@ function ArtistPage({ artworks }: { artworks: Artwork[] }) {
     if (!selectedItem) return;
     setIsSaving(true);
     try {
-      await updateArtworkInDb(selectedItem);
-      alert("¡Obra guardada exitosamente en la base de datos!");
+      if (selectedItem.id.startsWith("draft-")) {
+        // Es una obra nueva
+        const realId = `${selectedItem.type === "ceramica" ? "c" : "p"}-${Date.now()}`;
+        const artworkToSave = { ...selectedItem, id: realId };
+        await createArtworkInDb(artworkToSave);
+        setItems((currentItems) => currentItems.map((item) => (item.id === selectedItem.id ? artworkToSave : item)));
+        setSelectedId(realId);
+        alert("¡Nueva obra creada y guardada exitosamente!");
+      } else {
+        await updateArtworkInDb(selectedItem);
+        alert("¡Obra actualizada exitosamente en la base de datos!");
+      }
     } catch (error) {
       console.error(error);
       alert("Hubo un error al intentar guardar los cambios.");
     } finally {
       setIsSaving(false);
     }
+  }
+
+  function handleCreateNew() {
+    const newId = `draft-${Date.now()}`;
+    const newArtwork: Artwork = {
+      id: newId,
+      title: "Nueva obra",
+      type: "pintura",
+      available: true,
+      image: fallbackImage, // Imagen temporal
+      year: new Date().getFullYear(),
+    };
+    setItems((currentItems) => [newArtwork, ...currentItems]);
+    setSelectedId(newId);
+    setQuery("");
   }
 
   return (
@@ -1097,7 +1122,10 @@ function ArtistPage({ artworks }: { artworks: Artwork[] }) {
               <div className="section-badge">Inventario</div>
               <h2>Obras del catálogo</h2>
             </div>
-            <span className="artist-count">{filteredItems.length} visibles</span>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <span className="artist-count">{filteredItems.length} visibles</span>
+              <button className="btn btn--small" type="button" onClick={handleCreateNew}>+ Nueva obra</button>
+            </div>
           </div>
 
           <div className="artist-controls">
