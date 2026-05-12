@@ -3,6 +3,9 @@ main = "src/worker.js"
 compatibility_date = "2026-01-01"
 compatibility_flags = ["nodejs_compat"]
 
+[observability]
+enabled = true
+
 [version_metadata]
 binding = "CF_VERSION_METADATA"
 
@@ -11,10 +14,10 @@ binding = "CF_VERSION_METADATA"
 name = "art-worker-dev"
 compatibility_date = "2026-01-01"
 compatibility_flags = ["nodejs_compat"]
+tail_consumers = [{ service = "axiom-tail-dev" }]
 
 [env.dev.vars]
 ENVIRONMENT = "dev"
-SENTRY_DSN = "https://cf9345c02dc98aedf4a89f0a77af979d@o4511377702387712.ingest.us.sentry.io/4511377742692352"
 
 [env.dev.version_metadata]
 binding = "CF_VERSION_METADATA"
@@ -22,7 +25,6 @@ binding = "CF_VERSION_METADATA"
 [[env.dev.d1_databases]]
 binding = "DB"
 database_name = "art-db-dev"
-# Replace with output of: wrangler d1 create art-db-dev
 database_id = "d4cbf7ca-26a9-481e-8589-5089c2e24fdd"
 
 # --- Ambiente Production ---
@@ -30,10 +32,10 @@ database_id = "d4cbf7ca-26a9-481e-8589-5089c2e24fdd"
 name = "art-worker"
 compatibility_date = "2026-01-01"
 compatibility_flags = ["nodejs_compat"]
+tail_consumers = [{ service = "axiom-tail" }]
 
 [env.production.vars]
 ENVIRONMENT = "production"
-SENTRY_DSN = "https://cf9345c02dc98aedf4a89f0a77af979d@o4511377702387712.ingest.us.sentry.io/4511377742692352"
 
 [env.production.version_metadata]
 binding = "CF_VERSION_METADATA"

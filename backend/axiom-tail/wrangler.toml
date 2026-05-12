@@ -6,11 +6,11 @@ account_id = "f7aaab86d474fca548d8d9c1e8695390"
 [observability]
 enabled = true
 
-# Secrets: echo "$TOKEN" | npx wrangler secret put AXIOM_TOKEN --env <dev|production>
+# Secrets: printf '%s' "$TOKEN" | npx wrangler secret put AXIOM_TOKEN --env <dev|production>
 
 [env.dev]
 name = "axiom-tail-dev"
-vars = { AXIOM_DATASET = "galeria-backend-dev" }
+vars = { AXIOM_DATASET = "galeria-backend" }
 
 [env.production]
 name = "axiom-tail"

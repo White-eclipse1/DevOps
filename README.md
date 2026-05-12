@@ -130,37 +130,43 @@ Cloudflare Pages debe usar:
 
 ## Observabilidad (Axiom)
 
-Se reemplazó Sentry por **Axiom** con dos datasets sugeridos:
+Se usa **Axiom** con **exactamente 2 datasets** en la cuenta del equipo:
 
 | Dataset | Origen | Contenido |
 |---------|--------|-----------|
-| `galeria-frontend` | `frontend/src/instrument.ts` | Errores no capturados, `ErrorBoundary`, eventos de log (ingest HTTP desde el navegador) |
-| `galeria-backend-dev` / `galeria-backend` | Worker `art-worker` + Tail `axiom-tail` | Resúmenes de invocación, `console.log`/`console.error` JSON y excepciones del runtime |
+| `galeria-frontend` | `frontend/src/instrument.ts` | Errores no capturados, `ErrorBoundary`, batches de ingest desde el navegador |
+| `galeria-backend` | Worker `art-worker` + Tail `axiom-tail-dev` / `axiom-tail` | Telemetría de invocación, `console.*` JSON y excepciones del runtime |
 
-**Backend (Cloudflare Workers)**
+**Separar dev vs producción:** el producer incluye campo `environment` (`dev` | `production`) en cada línea JSON (`logEvent` en [backend/src/worker.js](backend/src/worker.js)). En Axiom: `where environment == "dev"` o `where environment == "production"`.
 
-1. Crea en Axiom los datasets `galeria-backend-dev` y `galeria-backend` (o ajusta `AXIOM_DATASET` en `backend/axiom-tail/wrangler.toml`).
-2. Genera un token con permiso de **ingest** para el tail worker (`AXIOM_TOKEN` como secret en Wrangler: `wrangler secret put AXIOM_TOKEN --env dev` desde `backend/axiom-tail`).
-3. Deploy del tail consumer (`axiom-tail-dev` / `axiom-tail`) y luego del producer (`art-worker-dev` / `art-worker`). Scripts en raíz del backend: `npm run deploy:tail:dev`, `npm run deploy:tail:prod`.
-4. El producer emite líneas JSON vía `logEvent()` ([backend/src/worker.js](backend/src/worker.js)) para que Tail las indexe junto con `exceptions` automáticas.
-5. **Nota Cloudflare**: los [Tail Workers](https://developers.cloudflare.com/workers/observability/tail-workers/) requieren plan **Workers Paid** (no aplican cuentas solo free).
+**Backend (Cloudflare)**
 
-**Frontend (Pages / Vite)**
+1. Crea en Axiom los datasets `galeria-frontend` y `galeria-backend`; el Tail usa `AXIOM_DATASET = "galeria-backend"` en [backend/axiom-tail/wrangler.toml](backend/axiom-tail/wrangler.toml) (ya ambos envs).
+2. Token ingest para el Tail: secreto Worker `AXIOM_TOKEN` desde `backend/axiom-tail` (en CI: GitHub secret `AXIOM_TOKEN_BACKEND`).
+3. Despliegue: tail consumer antes del producer; scripts `npm run deploy:tail:dev` y `deploy:tail:prod` en el paquete del backend.
+4. **Workers Paid**: [Tail Workers](https://developers.cloudflare.com/workers/observability/tail-workers/) según Cloudflare.
+5. Opcional tras deploy: `GET .../axiom-test` fuerza una excepción para validar ingest (quitar en producción estable si prefieren).
 
-Variables de build (solo si quieres telemetría en el navegador):
+**Secretos GitHub Actions** (un compañero con acceso las configura):
+
+| Secreto | Uso |
+|---------|-----|
+| `VITE_AXIOM_INGEST_URL` | Ingest frontend, típico `https://api.axiom.co/v1/datasets/galeria-frontend/ingest` (EU: host `api.eu.axiom.co`). |
+| `AXIOM_TOKEN_FRONTEND` | Token solo ingest sobre `galeria-frontend` → se inyecta como `VITE_AXIOM_TOKEN` en [frontend-deploy-dev.yml](.github/workflows/frontend-deploy-dev.yml). |
+| `AXIOM_TOKEN_BACKEND` | Token ingest sobre `galeria-backend` → el workflow ejecuta `wrangler secret put AXIOM_TOKEN` en el Tail worker antes de deploy. |
+
+**Frontend (Pages / Vite)** — sin secretos configurados el build sigue funcionando pero no envía eventos desde el navegador.
+
+Variables equivalentes locales:
 
 ```text
 VITE_AXIOM_INGEST_URL=https://api.axiom.co/v1/datasets/galeria-frontend/ingest
-VITE_AXIOM_TOKEN=<token solo ingest para el dataset galeria-frontend>
+VITE_AXIOM_TOKEN=<token solo ingest galeria-frontend>
 ```
 
-En GitHub Actions el workflow [frontend-deploy-dev.yml](.github/workflows/frontend-deploy-dev.yml) espera secrets `VITE_AXIOM_INGEST_URL` y `AXIOM_TOKEN_FRONTEND`. El cliente es best-effort: si las variables están vacías, no se envía nada.
+**CORS**: si falla ingest desde browser, usar proxy Worker u otra vía admitida por Axiom. El ingest vía Tail no usa CORS del navegador.
 
-**CORS**: el ingest de Axiom debe aceptar el origen de tu Pages/preview; si el navegador bloquea `fetch`, considera un proxy en Worker o ingest solo desde servidor.
-
-**GitHub Actions (backend)**
-
-Secret `AXIOM_TOKEN_BACKEND`: token de ingest con acceso al dataset configurado para `axiom-tail`. El workflow actualiza `AXIOM_TOKEN` en cada deploy antes de publicar los Workers.
+**D1 dev**: el `database_id` de `art-db-dev` en [backend/wrangler.toml](backend/wrangler.toml) debe ser válido.
 
 Consulta dashboards en [app.axiom.co](https://app.axiom.co).
 
