@@ -1,21 +1,26 @@
-name: Frontend Deploy — Dev
+name: Frontend CI — Dev
 
 on:
   push:
     branches: [develop]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-deploy-dev.yml"
+  pull_request:
+    branches: [develop]
   workflow_dispatch:
 
 concurrency:
-  group: frontend-deploy-dev
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 defaults:
   run:
     working-directory: frontend
 
 jobs:
-  deploy:
-    name: Build y deploy preview → Pages (develop)
+  validate-and-build:
+    name: Validar, probar y construir Frontend (Dev)
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -23,8 +28,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
       - name: Setup Node 20
         uses: actions/setup-node@v4
         with:
@@ -40,29 +43,3 @@ jobs:
 
       - name: Build de produccion (Vite)
         run: npm run build
-
-      - name: Deploy to Cloudflare Pages
-        id: pages-deploy
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: paaginaludos-devops
-          directory: frontend/dist
-          branch: develop
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Mostrar URL del preview
-        run: echo "Preview URL ${{ steps.pages-deploy.outputs.deployment-url }}"
-
-      - name: Smoke — verificar preview
-        run: |
-          URL="${{ steps.pages-deploy.outputs.deployment-url }}"
-          echo "Checking $URL"
-          for i in 1 2 3; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
-            [ "$STATUS" = "200" ] && echo "OK ($STATUS)" && exit 0
-            echo "Intento $i: $STATUS — reintentando en 10s..."
-            sleep 10
-          done
-          echo "Smoke test failed" && exit 1
