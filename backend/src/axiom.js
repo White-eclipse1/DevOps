@@ -88,7 +88,7 @@ export function buildRequestEvent(request, response, startedAt, extra = {}) {
 }
 
 function getAxiomIngestUrl(env) {
-  return env?.AXIOM_INGEST_URL || env?.VITE_AXIOM_INGEST_URL || "";
+  return env?.AXIOM_INGEST_URL_BACKEND || env?.AXIOM_INGEST_URL || env?.VITE_AXIOM_INGEST_URL || "";
 }
 
 function describeEndpoint(url) {

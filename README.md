@@ -132,13 +132,15 @@ Variables necesarias:
 ```text
 AXIOM_TOKEN_BACKEND
 AXIOM_TOKEN_FRONTEND
+AXIOM_INGEST_URL_BACKEND
 VITE_AXIOM_INGEST_URL
 ```
 
-`VITE_AXIOM_INGEST_URL` debe apuntar al endpoint de ingestion del dataset, por ejemplo:
+`AXIOM_INGEST_URL_BACKEND` debe apuntar al dataset del backend y `VITE_AXIOM_INGEST_URL` al dataset del frontend, por ejemplo:
 
 ```text
-https://api.axiom.co/v1/datasets/NOMBRE_DEL_DATASET/ingest
+https://api.axiom.co/v1/datasets/galeria-backend-dev/ingest
+https://api.axiom.co/v1/datasets/galeria-frontend/ingest
 ```
 
 Los secrets de GitHub se usan para configurar el Worker durante los deploys. Para Cloudflare Pages, configura tambien `AXIOM_TOKEN_FRONTEND` y `VITE_AXIOM_INGEST_URL` como variables/secrets del proyecto Pages, porque el endpoint `frontend/functions/api/monitor.js` corre dentro de Cloudflare Pages Functions.
