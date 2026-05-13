@@ -21,6 +21,7 @@ const SETTINGS = {
 
 const HOME_HERO_IDS = ["p-008", "p-006", "p-011", "p-014", "p-017", "p-015"];
 const FEATURED_CURATION_IDS = ["p-018", "p-020", "p-013", "p-008", "p-006", "c-002"];
+const DEFAULT_API_URL = "https://art-worker.agentemafigue.workers.dev";
 
 type GalleryFilter = "all" | "pintura" | "ceramica" | "disponible";
 type SortMode = "newest" | "oldest" | "priceAsc" | "priceDesc";
@@ -2169,14 +2170,15 @@ function getAppRoute(path: string): AppRoute {
 
 async function login(role: AuthRole, email: string, password: string): Promise<UserSession> {
   try {
-    const response = await fetch("/api/login", {
+    const apiUrl = import.meta.env.VITE_API_URL || DEFAULT_API_URL;
+    const response = await fetch(`${apiUrl.replace(/\/$/, "")}/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ role, email, password }),
     });
-    const data = (await response.json()) as {
+    const data = (await readJsonResponse(response)) as {
       ok?: boolean;
       token?: string;
       user?: {
@@ -2205,6 +2207,20 @@ async function login(role: AuthRole, email: string, password: string): Promise<U
     }
 
     throw error;
+  }
+}
+
+async function readJsonResponse(response: Response) {
+  const text = await response.text();
+
+  if (!text) {
+    throw new Error("El servidor no regreso una respuesta valida.");
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("El servidor regreso una respuesta invalida.");
   }
 }
 
